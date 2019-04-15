@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>{{ title }}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta
+      http-equiv="X-UA-Compatible"
+      content="IE=Edge,chrome=1 text/html; charset=UTF-8"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://theguardian.com/favicon.ico"
+    />
+    <link rel="stylesheet" type="text/css" href="/static/public.css" />
+  </head>
+
+  <body>
+    <header role="banner" class="header">
+      <div class="header__wrapper">
+        <div class="header__logo">
+          The Guardian
+        </div>
+      </div>
+    </header>
+  </body>
+
+  {% block content %}{% endblock %}
+</html>
