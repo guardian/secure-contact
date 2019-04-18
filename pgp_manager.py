@@ -9,7 +9,7 @@ class Entry:
         self.fingerprint = fingerprint
 
     def __str__(self):
-        return str(self.__class__) + ": " + str(self.__dict__)
+        return f'{str(self.__class__)}: {str(self.__dict__)}'
 
 def parse_name(key: str) -> str:
     return key.replace('PublicKeys/', '').replace('.pub.txt', '')
@@ -70,8 +70,8 @@ def main():
     client = create_s3_client(AWS_PROFILE)
     public_keys = list(get_matching_s3_keys(client, BUCKET_NAME, 'PublicKeys'))
     all_entries = [generate_entry(client, BUCKET_NAME, key) for key in public_keys]
-    
-    print(str(all_entries[0]))
+
+    print([str(entry) for entry in all_entries])
 
 if __name__== "__main__":
     main()
