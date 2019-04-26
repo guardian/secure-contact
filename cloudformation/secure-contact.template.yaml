@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Run the SecureContact service in AWS
+
+Parameters:
+  VpcId:
+    Description: The VPC in which SecureContact will run
+    Type: AWS::EC2::VPC::Id
+
+  AMI:
+    Description: Base AMI for SecureContact instances
+    Type: AWS::EC2::Image::Id
+
+  SSHAccessCidr:
+    Type: String
+    Description: A CIDR from which SSH access to the instance is allowed
+    AllowedPattern: ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}$
+    ConstraintDescription: Parameter should be a CIDR block e.g. "1.2.3.4/32"
+
+  KeyName:
+    Description: An ssh keypair to put on the instance
+    Type: AWS::EC2::KeyPair::KeyName
+
+  AccountId:
+    Type: String
+    Description: The account that this application will use
+
+  DataBucketName:
+    Description: Name to use for the S3 bucket that data is uploaded to
+    Type: String
+
+Mappings:
+  Constants:
+    App:
+      Value: secure-contact
+    Stack:
+      Value: infosec
+
+Resources:
+  DataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName:
+        Ref: DataBucketName
+      Tags:
+      - Key: App
+        Value:
+          Fn::FindInMap: [ Constants, App, Value ]
+      - Key: Stack
+        Value:
+          Fn::FindInMap: [ Constants, Stack, Value ]
+    DeletionPolicy: Retain
+
+  DataBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: DataBucket
+      PolicyDocument: 
+        Statement: 
+        - Action:
+          - s3:ListBucket 
+          - s3:GetObject
+          Effect: Allow
+          Resource:
+            - !Sub arn:aws:s3:::${DataBucket}
+            - !Sub arn:aws:s3:::${DataBucket}/*
+          Principal:
+            AWS: 
+            - !Sub arn:aws:iam::${AccountId}:root
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+      - !Ref InstanceRole
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+
+  SecureContactBucketPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: secure-contact-bucket-policy
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Resource:
+          - !Sub arn:aws:s3:::${DataBucket}
+          - !Sub arn:aws:s3:::${DataBucket}/*
+          Action:
+          - s3:ListBucket
+          - s3:GetObject
+      Roles:
+      - !Ref InstanceRole
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SecureContact EC2 instance
+      VpcId:
+        Ref: VpcId
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp:
+          Ref: SSHAccessCidr
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: 0.0.0.0/0
+      Tags:
+      - Key: App
+        Value:
+          Fn::FindInMap: [ Constants, App, Value ]
+      - Key: Stack
+        Value:
+          Fn::FindInMap: [ Constants, Stack, Value ]
