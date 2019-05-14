@@ -137,3 +137,32 @@ Resources:
           Fn::FindInMap: [ Constants, Stack, Value ]
       - Key: Stage
         Value: !Ref Stage
+
+  LaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      KeyName:
+        Ref: KeyName
+      ImageId:
+        Ref: AMI
+      SecurityGroups:
+      - Ref: InstanceSecurityGroup
+      InstanceType: t3.micro
+      IamInstanceProfile:
+        Ref: SecureContactInstanceProfile
+      AssociatePublicIpAddress: true
+      UserData:
+        'Fn::Base64': !Sub |
+          #!/bin/bash -ev
+          echo ${Stage} > /etc/stage
+          # setup secure-contact
+          adduser --system --home /secure-contact --disabled-password secure-contact
+
+          mkdir /secure-contact
+          cd /secure-contact
+          git clone https://github.com/guardian/secure-contact.git secure-contact
+
+          # Start application
+          systemctl daemon-reload
+          python3 /secure-contact/secure-contact/pgp_listing.py
+          python3 -m http.server
