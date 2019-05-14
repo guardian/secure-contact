@@ -155,14 +155,14 @@ Resources:
         'Fn::Base64': !Sub |
           #!/bin/bash -ev
           echo ${Stage} > /etc/stage
+          echo ${DataBucketName} > /etc/bucketname
+
           # setup secure-contact
           adduser --system --home /secure-contact --disabled-password secure-contact
 
           mkdir /secure-contact
           cd /secure-contact
-          git clone https://github.com/guardian/secure-contact.git secure-contact
+          pip3 install -r requirements.txt
 
-          # Start application
-          systemctl daemon-reload
-          python3 /secure-contact/secure-contact/pgp_listing.py
-          python3 -m http.server
+          # Give ownership of all the application files to the application user
+          chown -R secure-contact /secure-contact
