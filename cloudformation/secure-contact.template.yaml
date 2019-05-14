@@ -10,23 +10,27 @@ Parameters:
     Description: Base AMI for SecureContact instances
     Type: AWS::EC2::Image::Id
 
-  SSHAccessCidr:
-    Type: String
-    Description: A CIDR from which SSH access to the instance is allowed
+  AccessRestrictionCidr:
+    Description: A CIDR from which access to the instance is allowed
     AllowedPattern: ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}$
     ConstraintDescription: Parameter should be a CIDR block e.g. "1.2.3.4/32"
+    Type: String
 
   KeyName:
     Description: An ssh keypair to put on the instance
     Type: AWS::EC2::KeyPair::KeyName
 
-  AccountId:
-    Type: String
-    Description: The account that this application will use
-
   DataBucketName:
     Description: Name to use for the S3 bucket that data is uploaded to
     Type: String
+
+  Stage:
+    Description: Application stage
+    Type: String
+    AllowedValues:
+    - PROD
+    - CODE
+    - DEV
 
 Mappings:
   Constants:
@@ -49,6 +53,8 @@ Resources:
       - Key: Stack
         Value:
           Fn::FindInMap: [ Constants, Stack, Value ]
+      - Key: Stage
+        Value: !Ref Stage
     DeletionPolicy: Retain
 
   DataBucketPolicy:
@@ -59,7 +65,7 @@ Resources:
       PolicyDocument: 
         Statement: 
         - Action:
-          - s3:ListBucket 
+          - s3:ListBucket
           - s3:GetObject
           Effect: Allow
           Resource:
@@ -67,16 +73,16 @@ Resources:
             - !Sub arn:aws:s3:::${DataBucket}/*
           Principal:
             AWS: 
-            - !Sub arn:aws:iam::${AccountId}:root
+            - !Ref AWS::AccountId
 
-  InstanceProfile:
+  SecureContactInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Path: /
       Roles:
-      - !Ref InstanceRole
+      - !Ref SecureContactInstanceRole
 
-  InstanceRole:
+  SecureContactInstanceRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -103,7 +109,7 @@ Resources:
           - s3:ListBucket
           - s3:GetObject
       Roles:
-      - !Ref InstanceRole
+      - !Ref SecureContactInstanceRole
 
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -116,7 +122,7 @@ Resources:
         FromPort: 22
         ToPort: 22
         CidrIp:
-          Ref: SSHAccessCidr
+          Ref: AccessRestrictionCidr
       SecurityGroupEgress:
       - IpProtocol: tcp
         FromPort: 443
@@ -129,3 +135,5 @@ Resources:
       - Key: Stack
         Value:
           Fn::FindInMap: [ Constants, Stack, Value ]
+      - Key: Stage
+        Value: !Ref Stage
