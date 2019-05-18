@@ -20,6 +20,10 @@ Parameters:
     Description: An ssh keypair to put on the instance
     Type: AWS::EC2::KeyPair::KeyName
 
+  ArtifactBucket:
+    Description: Name of the S3 bucket where the artifact is located
+    Type: String
+
   DataBucketName:
     Description: Name to use for the S3 bucket that data is uploaded to
     Type: String
@@ -125,9 +129,10 @@ Resources:
           Ref: AccessRestrictionCidr
       SecurityGroupEgress:
       - IpProtocol: tcp
-        FromPort: 443
-        ToPort: 443
-        CidrIp: 0.0.0.0/0
+        FromPort: 433
+        ToPort: 433
+        CidrIp:
+          Ref: AccessRestrictionCidr
       Tags:
       - Key: App
         Value:
@@ -155,14 +160,20 @@ Resources:
         'Fn::Base64': !Sub |
           #!/bin/bash -ev
           echo ${Stage} > /etc/stage
-          echo ${DataBucketName} > /etc/bucketname
 
           # setup secure-contact
           adduser --system --home /secure-contact --disabled-password secure-contact
 
-          mkdir /secure-contact
-          cd /secure-contact
-          pip3 install -r requirements.txt
+          aws --region eu-west-1 s3 cp s3://${ArtifactBucket}/secure-contact/${Stage}/secure-contact.json /secure-contact
+          aws --region eu-west-1 s3 cp s3://${ArtifactBucket}/secure-contact/${Stage}/secure-contact.tgz /secure-contact
+
+          # Expand zipped tar file; remove base directory
+          tar -xzf /secure-contact/secure-contact.tgz --strip 1 --directory /secure-contact/
+
+          # TODO: this should be done as part of the build and bundle
+          # pip3 install -r requirements.txt
 
           # Give ownership of all the application files to the application user
           chown -R secure-contact /secure-contact
+
+          # Start application
