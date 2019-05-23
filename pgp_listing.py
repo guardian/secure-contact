@@ -25,7 +25,7 @@ def render_page(groups):
     root_template = env.get_template('pgp-listing.html')
 
     date = datetime.date.today().strftime("%d, %b %Y")
-    return root_template.render(groups = groups)
+    return root_template.render(groups=groups)
 
 groups = [
     Group('B', [
