@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
 <main role='main' class='body'>
-    <section>
-        <div class='intro'>
+    <section class="row">
+        <div class="intro col s10 offset-s2">
             <div class='intro__over-heading'>The Guardian PGP</div>
             <div class='intro__heading'>
                 <div class='intro__heading-text'>
@@ -11,14 +11,12 @@
             </div>
         </div>
     </section>
-    <section>
-        <div class='section-content'>
+    <section class="row">
+        <div class="section-content col s8 offset-s2">
             <p>
                 When corresponding with our journalists there are times where anonymity is not a priority, but the
-                aim
-                is to keep the conversation private. In such situations it may be appropriate to use email, but with
-                an
-                additional layer of security.
+                aim is to keep the conversation private. In such situations it may be appropriate to use email, but with
+                an additional layer of security.
             </p>
             <p>
                 Encrypting the contents of an email using public key cryptographic methods is a good way to avoid
@@ -27,48 +25,53 @@
             <p>
 
                 The Guardian uses a third party cloud email solution. Mail and document encryption can also help
-                stop a
-                third party from reading the contents of a conversation.
+                stop a third party from reading the contents of a conversation.
             </p>
             <p>
 
                 This page contains public keys of Guardian staff. To send an encrypted message to a journalist you
-                will
-                need to create your own keys and then encrypt the message using both your keys and the journalist’s
+                will need to create your own keys and then encrypt the message using both your keys and the journalist’s
                 public key.
             </p>
-
-            There are many different implementations of public key cryptography. At the Guardian we have opted for
-            an open source implementation of the OpenPGP standard. As with any public key cryptography
-            implementation, there may be software incompatibilities. We will do our best to resolve discrepancies,
-            but some issues may be beyond the capabilities of our technological implementation. The Guardian does
-            not endorse any particular PGP integration or application.
-
+            <p>
+                There are many different implementations of public key cryptography. At the Guardian we have opted for
+                an open source implementation of the OpenPGP standard. As with any public key cryptography
+                implementation, there may be software incompatibilities. We will do our best to resolve discrepancies,
+                but some issues may be beyond the capabilities of our technological implementation. The Guardian does
+                not endorse any particular PGP integration or application.
             </p>
 
         </div>
     </section>
-    <section class='filter require-js'>
-        <div class='section-content'>
+    <section class='filter row require-js'>
+        <div class="col s10 offset-s2">
             <label for='filter'>
                 <input id='filter' name='filter' type='text' class='filter__input' onkeyup='filterNames()'
                     spellcheck="false" placeholder='Filter names...' />
             </label>
         </div>
     </section>
-    <section>
-        <div class='section-content'>
-            <ol>
+    <section class="row">
+        <div class='section-content col s10 offset-s2'>
+            <ol class="js-group">
                 {% for group in groups %}
                 <li>
-                    <ol class='group'>
+                    <ol class='js-group'>
                         <h3>{{ group.heading }}</h3>
                         {% for entry in group.entries %}
-                        <li class='entry'>
-                            <span class='name'>{{ entry.name }} </span>
-                            <a href='{{ entry.public_key }}'>Public Key</a>
-                            <a href='{{ entry.fingerprint }}'>Fingerprint</a>
-                        </li>
+                        <div class="row js-entry">
+                            <div class="col s12">
+                                <div class="card">
+                                    <div class="card-content">
+                                      <span class="card-title js-name">{{ entry.name }}</span>
+                                    </div>
+                                    <div class="card-action">
+                                        <a href='{{ entry.public_key }}'>Public Key</a>
+                                        <a href='{{ entry.fingerprint }}'>Fingerprint</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         {% endfor %}
                     </ol>
                 </li>
@@ -76,29 +79,40 @@
             </ol>
         </div>
     </section>
-    </div>
+
+    <section class="row section-terms">
+        <div class="container">
+            <div class="row">
+                <div class="col s12">
+                        <h5>Terms and conditions</h5>
+                        <p>Use of The Guardian PGP public keys for encrypting email contents is at the user's own risk.</p>
+                        <p>Guardian PGP Public keys may be found on third party key servers. We cannot vouch for those third parties key stores but can vouch for the validity of keys on this site</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <script>
         function filterNames() {
             var filter = document.getElementById('filter')
             if (filter) {
                 var text = filter.value.toLowerCase();
-                var names = document.getElementsByClassName('name');
+                var names = document.getElementsByClassName('js-name');
 
                 for (var i = 0; i < names.length; i++) {
                     var elem = names[i];
 
                     if (elem.innerText.toLowerCase().indexOf(text) === -1) {
-                        elem.parentElement.setAttribute('data-hidden', true);
+                        elem.closest('.js-entry').setAttribute('data-hidden', true);
                     } else {
-                        elem.parentElement.removeAttribute('data-hidden');
+                        elem.closest('.js-entry').removeAttribute('data-hidden');
                     }
                 }
 
-                var groups = document.getElementsByClassName('group');
+                var groups = document.getElementsByClassName('js-group');
                 for (var i = 0; i < groups.length; i++) {
                     var group = groups[i];
-                    if (group.querySelectorAll('.entry:not([data-hidden])').length === 0) {
+                    if (group.querySelectorAll('.js-entry:not([data-hidden])').length === 0) {
                         group.setAttribute('data-hidden', true);
                     } else {
                         group.removeAttribute('data-hidden');

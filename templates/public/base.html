@@ -13,13 +13,14 @@
       type="image/png"
       href="https://theguardian.com/favicon.ico"
     />
+    <link rel="stylesheet" type="text/css" href="/static/materialize.css" />
     <link rel="stylesheet" type="text/css" href="/static/public.css" />
   </head>
 
   <body>
-    <header role="banner" class="header">
+    <header role="banner" class="header row">
       <div class="header__wrapper">
-        <div class="header__logo">
+        <div class="header__gu-logo">
           {% include 'guardian-logo.html' %}
         </div>
       </div>
@@ -27,4 +28,13 @@
   </body>
 
   {% block content %}{% endblock %}
+
+  <footer class="page-footer row">
+      <div class="footer-copyright container">
+        <div>
+            © 2019 Guardian News and Media Limited or its
+            affiliated companies. All rights reserved.
+        </div>
+      </div>
+  </footer>
 </html>
