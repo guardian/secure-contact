@@ -46,37 +46,29 @@
     <section class='filter row require-js'>
         <div class="col s10 offset-s2">
             <label for='filter'>
-                <input id='filter' name='filter' type='text' class='filter__input' onkeyup='filterNames()'
+                <input id='filter' name='filter' type='text' class='filter__input browser-default' onkeyup='filterNames()'
                     spellcheck="false" placeholder='Filter names...' />
             </label>
         </div>
     </section>
     <section class="row">
-        <div class='section-content col s10 offset-s2'>
-            <ol class="js-group">
-                {% for group in groups %}
-                <li>
-                    <ol class='js-group'>
-                        <h3>{{ group.heading }}</h3>
-                        {% for entry in group.entries %}
-                        <div class="row js-entry">
-                            <div class="col s12">
-                                <div class="card">
-                                    <div class="card-content">
-                                      <span class="card-title js-name">{{ entry.name }}</span>
-                                    </div>
-                                    <div class="card-action">
-                                        <a href='{{ entry.public_key }}'>Public Key</a>
-                                        <a href='{{ entry.fingerprint }}'>Fingerprint</a>
-                                    </div>
-                                </div>
+        <div class="section-content col s10 m6 offset-s2 offset-m2">
+            {% for group in groups %}
+            <ol class="collection with-header js-group">
+                <li class="collection-header"><h4>{{ group.heading }}</h4></li>
+                {% for entry in group.entries %}
+                    <li class="collection-item js-entry">
+                        <div>
+                            <span class="js-name">{{ entry.name }}</span>
+                            <div class="secondary-content">
+                                <a class="entry__link" href='{{ entry.public_key }}'>Public Key</a>
+                                <a class="entry__link" href='{{ entry.fingerprint }}'>Fingerprint</a>
                             </div>
                         </div>
-                        {% endfor %}
-                    </ol>
-                </li>
+                    </li>
                 {% endfor %}
             </ol>
+            {% endfor %}
         </div>
     </section>
 
