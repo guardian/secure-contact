@@ -1,3 +1,9 @@
+:root {
+    --gu-grey: #506991;
+    --gu-blue: #052962;
+
+}
+
 
 body {
     margin: 0;
@@ -15,6 +21,10 @@ ol {
     color: white;
     align-items: center;
     width: 100%;
+}
+
+.header__gu-logo {
+    margin: 12px 24px;
 }
 
 .header__wrapper {
@@ -36,22 +46,7 @@ ol {
     position: relative;
 }
 
-section {
-    display: flex;
-}
-
-section > * {
-    flex-basis: 80%;
-}
-
-section::before {
-    content: "";
-    flex-basis: 0;
-    flex-grow: 1;
-}
-
 .section-content {
-    padding: .375rem .625rem 0;
     border-left: .0625rem solid #dcdcdc;
 }
 
@@ -65,7 +60,7 @@ section::before {
 }
 
 .intro__over-heading {
-    font-size: 1rem;
+    font-size: 1.5rem;
     line-height: 1.125rem;
     display: inline-block;
     line-height: 1;
@@ -115,10 +110,24 @@ section::before {
 }
 
 /* For listings */
-.group[data-hidden] {
+.js-group[data-hidden] {
     display: none;
 }
 
-.entry[data-hidden] {
+.js-entry[data-hidden] {
     display: none;
+}
+
+.section-terms {
+    background-color: #f7f7f7;
+    margin-bottom: 0;
+    padding: 12px 0;
+
+}
+
+/* footer */
+.page-footer {
+    background-color: #052962;
+    margin-bottom: 0;
+    padding: 12px 0;
 }
