@@ -1,7 +1,16 @@
 :root {
     --gu-grey: #506991;
     --gu-blue: #052962;
+    --gu-yellow-1: #FFF280;
+    --gu-yellow-2: #ffe500;
+}
 
+.gu-padding {
+    padding: 12px;
+}
+
+.row {
+    margin: 0;
 }
 
 
@@ -49,6 +58,7 @@ ol {
 
 .section-content {
     border-left: 1px solid #dcdcdc;
+    border-right: 1px solid #dcdcdc;
 }
 
 /*
@@ -86,15 +96,19 @@ ol {
  * Filter box
  */
 .filter {
-    background: #052962;
+    background: #FFF280;
     color: white;
+}
+
+.filter__container {
+    background: #ffe500;
+    border-top: 1px solid #dcdcdc;
 }
 
 .filter__input {
     border-radius: 30px;
     padding: 10px 20px;
     border: 0;
-    margin: 12px 0;
     font-size: 1rem;
     max-width: 60%;
     width: 25rem;
@@ -130,14 +144,17 @@ ol {
 
 .section-terms {
     background-color: #f7f7f7;
-    margin-bottom: 0;
-    padding: 12px 0;
-
+    border-top: 1px solid #dcdcdc;
 }
 
 /* footer */
 .page-footer {
     background-color: #052962;
-    margin-bottom: 0;
     padding: 12px 0;
+}
+
+.gu-copyright {
+    font-size: .8rem;
+    font-weight: 300;
+    font-family: Guardian Text Sans Web,Helvetica Neue,Helvetica,Arial,Lucida Grande,sans-serif;
 }

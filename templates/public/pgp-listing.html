@@ -2,7 +2,7 @@
 {% block content %}
 <main role='main' class='body'>
     <section class="row">
-        <div class="intro col s10 offset-s2">
+        <div class="intro container">
             <div class='intro__over-heading'>The Guardian PGP</div>
             <div class='intro__heading'>
                 <div class='intro__heading-text'>
@@ -12,7 +12,7 @@
         </div>
     </section>
     <section class="row">
-        <div class="section-content col s8 offset-s2">
+        <div class="section-content container gu-padding">
             <p>
                 When corresponding with our journalists there are times where anonymity is not a priority, but the
                 aim is to keep the conversation private. In such situations it may be appropriate to use email, but with
@@ -44,7 +44,7 @@
         </div>
     </section>
     <section class='filter row require-js'>
-        <div class="col s10 offset-s2">
+        <div class="filter__container container gu-padding">
             <label for='filter'>
                 <input id='filter' name='filter' type='text' class='filter__input browser-default' onkeyup='filterNames()'
                     spellcheck="false" placeholder='Filter names...' />
@@ -52,7 +52,7 @@
         </div>
     </section>
     <section class="row">
-        <div class="section-content col s10 m6 offset-s2 offset-m2">
+        <div class="section-content container gu-padding">
             {% for group in groups %}
             <ol class="collection with-header js-group">
                 <li class="collection-header"><h4>{{ group.heading }}</h4></li>
@@ -73,14 +73,10 @@
     </section>
 
     <section class="row section-terms">
-        <div class="container">
-            <div class="row">
-                <div class="col s12">
-                        <h5>Terms and conditions</h5>
-                        <p>Use of The Guardian PGP public keys for encrypting email contents is at the user's own risk.</p>
-                        <p>Guardian PGP Public keys may be found on third party key servers. We cannot vouch for those third parties key stores but can vouch for the validity of keys on this site</p>
-                </div>
-            </div>
+        <div class="container gu-padding">
+            <h5>Terms and conditions</h5>
+            <p>Use of The Guardian PGP public keys for encrypting email contents is at the user's own risk.</p>
+            <p>Guardian PGP Public keys may be found on third party key servers. We cannot vouch for those third parties key stores but can vouch for the validity of keys on this site.</p>
         </div>
     </section>
 
