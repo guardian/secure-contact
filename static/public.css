@@ -21,6 +21,7 @@ ol {
     color: white;
     align-items: center;
     width: 100%;
+    margin: 0;
 }
 
 .header__gu-logo {
@@ -47,7 +48,7 @@ ol {
 }
 
 .section-content {
-    border-left: .0625rem solid #dcdcdc;
+    border-left: 1px solid #dcdcdc;
 }
 
 /*
@@ -93,7 +94,7 @@ ol {
     border-radius: 30px;
     padding: 10px 20px;
     border: 0;
-    margin-bottom: .375rem;
+    margin: 12px 0;
     font-size: 1rem;
     max-width: 60%;
     width: 25rem;
@@ -107,6 +108,15 @@ ol {
 
 .filter__input:focus::placeholder {
     color: #dcdcdc;
+}
+
+.collection {
+    border: none;
+}
+
+.entry__link {
+    padding: 6px;
+    margin: 0 6px;
 }
 
 /* For listings */
