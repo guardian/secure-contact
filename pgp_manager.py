@@ -2,6 +2,9 @@ import boto3
 import os
 import json
 
+from typing import Dict, List, Any
+
+
 class Entry:
     def __init__(self, name, publickey, fingerprint):
         self.name = name
@@ -11,13 +14,17 @@ class Entry:
     def __str__(self):
         return f'{str(self.__class__)}: {str(self.__dict__)}'
 
+
+# assumes the uploaded public key is named after the contact
 def parse_name(key: str) -> str:
     return key.replace('PublicKeys/', '').replace('.pub.txt', '')
+
 
 def fetch_fingerprint(s3_client, bucket: str, name: str) -> str:
     key = f'Fingerprints/{name}.fpr.txt'
     s3_obj = s3_client.get_object(Bucket=bucket, Key=key)
     return s3_obj['Body'].read()
+
 
 def generate_entry(s3_client, bucket: str, key: str) -> Entry:
     s3_obj = s3_client.get_object(Bucket=bucket, Key=key)
@@ -26,11 +33,13 @@ def generate_entry(s3_client, bucket: str, key: str) -> Entry:
     fingerprint_contents = fetch_fingerprint(s3_client, bucket, contact_name)
     return Entry(contact_name, key_contents, fingerprint_contents)
 
+
 def create_s3_client(profile):
     session = boto3.Session(profile_name=profile)
     return session.client('s3')
 
-def get_matching_s3_objects(s3_client, bucket: str, prefix: str):
+
+def get_matching_s3_objects(s3_client, bucket: str, prefix: str) -> List[Dict[str, Any]]:
     kwargs = {'Bucket': bucket}
 
     while True:
@@ -56,22 +65,41 @@ def get_matching_s3_objects(s3_client, bucket: str, prefix: str):
         except KeyError:
             break
 
-def get_matching_s3_keys(s3_client, bucket: str, prefix: str):
+
+def get_matching_s3_keys(s3_client, bucket: str, prefix: str) -> List[str]:
     for obj in get_matching_s3_objects(s3_client, bucket, prefix):
         yield obj['Key']
+
+
+# should copy a list of s3 objects from one bucket to another, preserving the directory structure
+def copy_keys_to_public_bucket(s3_client, source_bucket: str, destination_bucket: str, public_keys: List[str]) -> None:
+    # should also set public read on the object
+    # could we set a lifecycle on the bucket to deal with old keys?
+    for key in public_keys:
+        copy_source = {
+            'Bucket': source_bucket,
+            'Key': key
+        }
+        s3_client.copy(copy_source, destination_bucket, key)
+
 
 def main():
     config_path = os.path.expanduser('~/.gu/secure-contact.json')
     config = json.load(open(config_path))
 
-    BUCKET_NAME = config['BUCKET_NAME']
+    DATA_BUCKET_NAME = config['DATA_BUCKET_NAME']
+    PUBLIC_BUCKET_NAME = config['PUBLIC_BUCKET_NAME']
     AWS_PROFILE = config['AWS_PROFILE']
 
+    # create the client that we will use to access AWS S3
     client = create_s3_client(AWS_PROFILE)
-    public_keys = list(get_matching_s3_keys(client, BUCKET_NAME, 'PublicKeys'))
-    all_entries = [generate_entry(client, BUCKET_NAME, key) for key in public_keys]
+    public_keys = list(get_matching_s3_keys(client, DATA_BUCKET_NAME, 'PublicKeys'))
+
+    copy_keys_to_public_bucket(client, DATA_BUCKET_NAME, PUBLIC_BUCKET_NAME, public_keys)
+    all_entries = [generate_entry(client, DATA_BUCKET_NAME, key) for key in public_keys]
 
     print([str(entry) for entry in all_entries])
 
-if __name__== "__main__":
+
+if __name__ == "__main__":
     main()
