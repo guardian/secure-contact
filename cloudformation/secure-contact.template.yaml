@@ -25,7 +25,11 @@ Parameters:
     Type: String
 
   DataBucketName:
-    Description: Name to use for the S3 bucket that data is uploaded to
+    Description: Name to use for the private S3 bucket where we upload data
+    Type: String
+
+  PublicBucketName:
+    Description: Name to use for the public S3 bucket that will serve content
     Type: String
 
   Stage:
@@ -46,10 +50,15 @@ Mappings:
 Resources:
   DataBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
     Properties:
       AccessControl: Private
-      BucketName:
-        Ref: DataBucketName
+      BucketName: !Ref DataBucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
       Tags:
       - Key: App
         Value:
@@ -59,7 +68,6 @@ Resources:
           Fn::FindInMap: [ Constants, Stack, Value ]
       - Key: Stage
         Value: !Ref Stage
-    DeletionPolicy: Retain
 
   DataBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -78,6 +86,46 @@ Resources:
           Principal:
             AWS: 
             - !Ref AWS::AccountId
+
+  PublicBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      AccessControl: PublicRead
+      BucketName: !Ref PublicBucketName
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 28
+            Status: Enabled
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: 404.html
+      Tags:
+        - Key: App
+          Value:
+            Fn::FindInMap: [ Constants, App, Value ]
+        - Key: Stack
+          Value:
+            Fn::FindInMap: [ Constants, Stack, Value ]
+        - Key: Stage
+          Value: !Ref Stage
+
+  PublicBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: PublicBucket
+      PolicyDocument:
+        Statement:
+        - Action:
+          - s3:GetObject
+          Effect: Allow
+          Resource:
+            - !Sub arn:aws:s3:::${PublicBucket}/*
+          Principal: "*"
+          Condition:
+            IpAddress:
+              aws:SourceIp: !Ref AccessRestrictionCidr
 
   SecureContactInstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -98,6 +146,20 @@ Resources:
           Action:
           - sts:AssumeRole
       Path: /
+      Policies:
+        - PolicyName: secure-contact-instance-policy
+          PolicyDocument:
+            Statement:
+              # grant access to the S3 bucket that will hold the website contents
+              - Effect: Allow
+                Resource: !Sub arn:aws:s3:::${PublicBucketName}
+                Action:
+                  - s3:ListBucket
+              - Effect: Allow
+                Resource: !Sub arn:aws:s3:::${PublicBucketName}/*
+                Action:
+                  - s3:PutObject
+                  - s3:DeleteObject
 
   SecureContactBucketPolicy:
     Type: AWS::IAM::Policy
