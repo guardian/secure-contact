@@ -6,22 +6,6 @@ from urllib import parse
 from typing import Dict, List, Any
 
 
-class Group:
-    def __init__(self, heading, entries):
-        self.heading = heading
-        self.entries = entries
-
-    def __eq__(self, other):
-        if not isinstance(other, Group):
-            return NotImplemented
-
-        return self.heading == other.heading and self.entries == other.entries
-
-    def __hash__(self):
-        # Make class instances usable as items in hashable collections
-        return hash((self.heading, self.entries))
-
-
 class Entry:
     def __init__(self, name, publickey, fingerprint):
         self.name = name
@@ -56,8 +40,8 @@ def fetch_fingerprint(s3_client, bucket: str, name: str) -> str:
 def generate_entry(s3_client, bucket: str, key: str) -> Entry:
     contact_name = parse_name(key)
     key_url = parse.quote(key)
-    fingerprint_contents = fetch_fingerprint(s3_client, bucket, contact_name)
-    return Entry(contact_name, key_url, fingerprint_contents)
+    fingerprint = fetch_fingerprint(s3_client, bucket, contact_name)
+    return Entry(contact_name.title(), key_url, fingerprint)
 
 
 def create_s3_client(profile):
@@ -109,17 +93,8 @@ def copy_keys_to_public_bucket(s3_client, source_bucket: str, destination_bucket
         s3_client.copy(copy_source, destination_bucket, key)
 
 
-def sort_entries_into_groups(entries: List[Entry]) -> Dict[str, List[Entry]]:
-    groups = {}
-    for entry in entries:
-        group = entry.name.split(' ', 1)
-        if len(group) > 1:
-            grouping = group[1][0].upper()
-            groups.setdefault(grouping, []).append(entry)
-    return groups
-
-
-def main():
+# fetch all of the required data from S3 and return a List containing an Entry for each contact
+def main() -> List[Entry]:
     config_path = os.path.expanduser('~/.gu/secure-contact.json')
     config = json.load(open(config_path))
 
@@ -132,10 +107,7 @@ def main():
     public_keys = list(get_matching_s3_keys(client, DATA_BUCKET_NAME, 'PublicKeys'))
 
     copy_keys_to_public_bucket(client, DATA_BUCKET_NAME, PUBLIC_BUCKET_NAME, public_keys)
-    all_entries = [generate_entry(client, DATA_BUCKET_NAME, key) for key in public_keys]
-    all_groups = sort_entries_into_groups(all_entries)
-
-    print(all_groups)
+    return [generate_entry(client, DATA_BUCKET_NAME, key) for key in public_keys]
 
 
 if __name__ == "__main__":
