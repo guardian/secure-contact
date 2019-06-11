@@ -27,7 +27,6 @@ class Group:
 
 def parse_fingerprint(raw_fingerprint: str) -> str:
     split_str = raw_fingerprint.split('Key fingerprint = ', 1)
-
     if len(split_str) > 1:
         return split_str[1][:50]
 
@@ -36,7 +35,6 @@ def enhance_entry(entry: Entry) -> Entry:
     contact_name = entry.name.title()
     key_url = parse.quote(entry.publickey)
     fingerprint = parse_fingerprint(entry.fingerprint)
-    print(str(Entry(contact_name, key_url, fingerprint)))
     return Entry(contact_name, key_url, fingerprint)
 
 
