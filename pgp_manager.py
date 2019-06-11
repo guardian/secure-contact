@@ -2,7 +2,6 @@ import boto3
 import os
 import json
 
-from urllib import parse
 from typing import Dict, List, Any
 
 
@@ -34,14 +33,13 @@ def parse_name(key: str) -> str:
 def fetch_fingerprint(s3_client, bucket: str, name: str) -> str:
     key = f'Fingerprints/{name}.fpr.txt'
     s3_obj = s3_client.get_object(Bucket=bucket, Key=key)
-    return s3_obj['Body'].read()
+    return str(s3_obj['Body'].read())
 
 
 def generate_entry(s3_client, bucket: str, key: str) -> Entry:
     contact_name = parse_name(key)
-    key_url = parse.quote(key)
     fingerprint = fetch_fingerprint(s3_client, bucket, contact_name)
-    return Entry(contact_name.title(), key_url, fingerprint)
+    return Entry(contact_name, key, fingerprint)
 
 
 def create_s3_client(profile):
