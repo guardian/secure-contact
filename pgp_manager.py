@@ -98,6 +98,12 @@ def get_content_type(filename: str) -> str:
         return 'text/css'
 
 
+def upload_html(session: Session, bucket: str, key: str, body: str) -> None:
+    client = session.client('s3')
+    content_type = 'text/html'
+    client.put_object(Body=body, Bucket=bucket, Key=key, ContentType=content_type)
+
+
 def upload_files(session: Session, bucket: str, path: str) -> None:
     s3 = session.resource('s3')
     bucket = s3.Bucket(bucket)

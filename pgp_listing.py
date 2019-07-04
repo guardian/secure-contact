@@ -67,6 +67,20 @@ def render_page(groups: List[Group]):
     return root_template.render(groups=groups)
 
 
+def lambda_handler(event, context) -> None:
+    DATA_BUCKET_NAME = os.getenv('DATA_BUCKET_NAME')
+    PUBLIC_BUCKET_NAME = os.getenv('PUBLIC_BUCKET_NAME')
+
+    session = pgp_manager.create_session()
+    all_entries = pgp_manager.get_all_entries(session, DATA_BUCKET_NAME, PUBLIC_BUCKET_NAME)
+    enhanced_entries = [enhance_entry(entry) for entry in all_entries]
+    all_groups = create_groups(sort_entries(enhanced_entries))
+    index_page = render_page(all_groups)
+
+    pgp_manager.upload_files(session, PUBLIC_BUCKET_NAME, './static')
+    pgp_manager.upload_html(session, PUBLIC_BUCKET_NAME, 'index.html', index_page)
+
+
 if __name__ == '__main__':
 
     if os.getenv('STAGE'):
