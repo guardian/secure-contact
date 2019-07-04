@@ -1,9 +1,8 @@
-import boto3
-import os
-import json
+import boto3, botocore, os, json
 
 from typing import Dict, List, Any
 from boto3 import Session
+from botocore.exceptions import ClientError
 
 class Entry:
     def __init__(self, name, publickey, fingerprint):
@@ -29,12 +28,17 @@ class Entry:
 def parse_name(key: str) -> str:
     return key.replace('PublicKeys/', '').replace('.pub.txt', '')
 
-# TODO: handle when there is no fingerprint
 # TODO: can we autogenerate the fingerprint?
 def fetch_fingerprint(s3_client, bucket: str, name: str) -> str:
     key = f'Fingerprints/{name}.fpr.txt'
-    s3_obj = s3_client.get_object(Bucket=bucket, Key=key)
-    return str(s3_obj['Body'].read())
+    try:
+        s3_obj = s3_client.get_object(Bucket=bucket, Key=key)
+        return str(s3_obj['Body'].read())
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'NoSuchKey':
+            print('WARNING: fetch_fingerprint NoSuchKey')
+        else:
+            raise e
 
 
 def generate_entry(s3_client, bucket: str, key: str) -> Entry:
