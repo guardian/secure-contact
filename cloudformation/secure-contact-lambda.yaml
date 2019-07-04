@@ -1,0 +1,205 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Run the SecureContact Lambda in AWS
+
+Parameters:
+  ArtifactBucket:
+    Description: Name of the S3 bucket where the artifact is located
+    Type: String
+
+  DataBucketName:
+    Description: Name to use for the private S3 bucket where we upload data
+    Type: String
+
+  PublicBucketName:
+    Description: Name to use for the public S3 bucket that will serve content
+    Type: String
+
+  Stage:
+    Description: Application stage
+    Type: String
+    AllowedValues:
+    - PROD
+    - CODE
+    - DEV
+    Default: PROD
+
+  App:
+    Description: Application name
+    Type: String
+    Default: secure-contact
+
+  Stack:
+    Description: Application stack
+    Type: String
+    Default: secure-contact
+
+  AccessRestrictionCidr:
+    Description: A CIDR from which access is allowed
+    AllowedPattern: ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}$
+    ConstraintDescription: Parameter should be a CIDR block e.g. "1.2.3.4/32"
+    Type: String
+
+Resources:
+
+# ----------------------- #
+#  S3 BUCKETS FOR APP     #
+# ----------------------- #
+
+  DataBucket:
+    Type: AWS::S3::Bucket
+    DependsOn: BucketPermission
+    DeletionPolicy: Retain
+    Properties:
+      AccessControl: Private
+      BucketName: !Ref DataBucketName
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: 's3:ObjectCreated:*'
+            Function: !GetAtt SecureContactWatcher.Arn
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: App
+          Value: !Ref App
+        - Key: Stack
+          Value: !Ref Stack
+        - Key: Stage
+          Value: !Ref Stage
+
+  DataBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: DataBucket
+      PolicyDocument: 
+        Statement: 
+        - Action:
+          - s3:ListBucket
+          - s3:GetObject
+          Effect: Allow
+          Resource:
+            - !Sub arn:aws:s3:::${DataBucket}
+            - !Sub arn:aws:s3:::${DataBucket}/*
+          Principal:
+            AWS: 
+            - !Ref AWS::AccountId
+
+  PublicBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      AccessControl: PublicRead
+      BucketName: !Ref PublicBucketName
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 28
+            Status: Enabled
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: 404.html
+      Tags:
+        - Key: App
+          Value: !Ref App
+        - Key: Stack
+          Value: !Ref Stack
+        - Key: Stage
+          Value: !Ref Stage
+
+  PublicBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: PublicBucket
+      PolicyDocument:
+        Statement:
+        - Action:
+          - s3:GetObject
+          Effect: Allow
+          Resource:
+            - !Sub arn:aws:s3:::${PublicBucket}/*
+          Principal: "*"
+          Condition:
+            IpAddress:
+              aws:SourceIp: !Ref AccessRestrictionCidr
+
+# ----------------------- #
+#  SECURE CONTACT LAMBDA  #
+# ----------------------- #
+
+  BucketPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref SecureContactWatcher
+      Principal: s3.amazonaws.com
+      SourceAccount: !Ref "AWS::AccountId"
+      SourceArn: !Sub arn:aws:s3:::${DataBucketName}
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: [lambda.amazonaws.com]}
+            Action: ['sts:AssumeRole']
+      Path: /
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      Policies:
+        - PolicyName: data-bucket-read
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub arn:aws:s3:::${DataBucketName}
+                  - !Sub arn:aws:s3:::${DataBucketName}/*
+        - PolicyName: public-bucket-upload
+          PolicyDocument:
+            Statement:
+              # grant access to the S3 bucket that will hold the website contents
+              - Effect: Allow
+                Resource: !Sub arn:aws:s3:::${PublicBucketName}
+                Action:
+                  - s3:ListBucket
+              - Effect: Allow
+                Resource: !Sub arn:aws:s3:::${PublicBucketName}/*
+                Action:
+                  - s3:PutObject
+                  - s3:DeleteObject
+
+  SecureContactWatcher:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Generate static files when keys are added
+      FunctionName: !Sub ${App}-${Stage}
+      Role: !GetAtt LambdaExecutionRole.Arn
+      CodeUri: 
+        Bucket: !Ref ArtifactBucket
+        Key: !Sub ${Stack}/${Stage}/${App}/lambda.zip
+      Runtime: python3.7
+      Handler: app.pgp_listing
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+          DATA_BUCKET_NAME: !Ref DataBucketName
+          PUBLIC_BUCKET_NAME: !Ref PublicBucketName
+      Timeout: 300
+      ReservedConcurrentExecutions: 1
+      Events:
+        CheckStatusEvent:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 day) 
+      Tags:
+        Stack: !Ref Stack
+        Stage: !Ref Stage
+        App: !Ref App
