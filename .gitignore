@@ -19,8 +19,10 @@ pip-selfcheck.json
 
 .DS_Store
 .vscode
+.idea
 __pycache__
 
 # Outputted and generated files
 
 /build/
+/package/
