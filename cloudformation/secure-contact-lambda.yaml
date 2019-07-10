@@ -186,7 +186,7 @@ Resources:
         Bucket: !Ref ArtifactBucket
         Key: !Sub ${Stack}/${Stage}/${App}/lambda.zip
       Runtime: python3.7
-      Handler: pgp_listing
+      Handler: pgp_listing.lambda_handler
       Environment:
         Variables:
           STAGE: !Ref Stage
