@@ -1,8 +1,9 @@
 import boto3, botocore, os, json
 
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Union
 from boto3 import Session
 from botocore.exceptions import ClientError
+
 
 class Entry:
     def __init__(self, name, publickey, fingerprint):
@@ -28,15 +29,21 @@ class Entry:
 def parse_name(key: str) -> str:
     return key.replace('PublicKeys/', '').replace('.pub.txt', '')
 
+
 # TODO: can we autogenerate the fingerprint?
-def fetch_fingerprint(s3_client, bucket: str, name: str) -> str:
+def generate_fingerprint(s3_client, bucket: str, name: str) -> str:
+    return ''
+
+
+# Not all public keys will have a corresponding fingerprint
+def fetch_fingerprint(s3_client, bucket: str, name: str) -> Union[None, str]:
     key = f'Fingerprints/{name}.fpr.txt'
     try:
         s3_obj = s3_client.get_object(Bucket=bucket, Key=key)
         return str(s3_obj['Body'].read())
     except ClientError as e:
         if e.response['Error']['Code'] == 'NoSuchKey':
-            print('WARNING: fetch_fingerprint NoSuchKey')
+            print(f'WARNING: fetch_fingerprint NoSuchKey {key}')
         else:
             raise e
 
@@ -111,11 +118,11 @@ def upload_html(session: Session, bucket: str, key: str, body: str) -> None:
 def upload_files(session: Session, bucket: str, path: str) -> None:
     s3 = session.resource('s3')
     bucket = s3.Bucket(bucket)
-
     for subdir, dirs, files in os.walk(path):
         for file in files:
             content_type = get_content_type(file)
             full_path = os.path.join(subdir, file)
+            print(full_path)
             with open(full_path, 'rb') as data:
                 bucket.upload_file(full_path, full_path[len(path)+1:], ExtraArgs={'ContentType': content_type})
 
@@ -124,7 +131,7 @@ def upload_files(session: Session, bucket: str, path: str) -> None:
 def get_all_entries(session: Session, data_bucket: str, public_bucket: str) -> List[Entry]:
     client = session.client('s3')
     public_keys = list(get_matching_s3_keys(client, data_bucket, 'PublicKeys/'))
-    copy_keys_to_public_bucket(client, data_bucket, public_bucket, public_keys)
+    # copy_keys_to_public_bucket(client, data_bucket, public_bucket, public_keys)
     return [generate_entry(client, data_bucket, key) for key in public_keys]
 
 
@@ -141,7 +148,6 @@ if __name__ == "__main__":
         PUBLIC_BUCKET_NAME = config['PUBLIC_BUCKET_NAME']
         AWS_PROFILE = config['AWS_PROFILE']
 
-    session = create_session(AWS_PROFILE)
-    get_all_entries(session, DATA_BUCKET_NAME, PUBLIC_BUCKET_NAME)
-
-    upload_files(session, PUBLIC_BUCKET_NAME, './build')
+    aws_session = create_session(AWS_PROFILE)
+    get_all_entries(aws_session, DATA_BUCKET_NAME, PUBLIC_BUCKET_NAME)
+    upload_files(aws_session, PUBLIC_BUCKET_NAME, './build')
