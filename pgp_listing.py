@@ -7,7 +7,7 @@ from pgp_manager import Entry
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from urllib import parse
 
-from typing import Dict, List
+from typing import Dict, List, Union
 
 
 class Group:
@@ -26,32 +26,60 @@ class Group:
         return hash((self.heading, self.entries))
 
 
-def parse_fingerprint(raw_fingerprint: str) -> str:
-    split_str = raw_fingerprint.split('Key fingerprint = ', 1)
-    if len(split_str) > 1:
-        return split_str[1][:50]
+class EnhancedEntry:
+    def __init__(self, other_names, last_name, publickey, fingerprint):
+        self.other_names = other_names
+        self.last_name = last_name
+        self.publickey = publickey
+        self.fingerprint = fingerprint
+
+    def __str__(self):
+        return f'{str(self.__class__)}: {str(self.__dict__)}'
+
+    def __eq__(self, other):
+        if not isinstance(other, EnhancedEntry):
+            return NotImplemented
+
+        return self.other_names == other.other_names and self.last_name == other.last_name and self.publickey == other.publickey and self.fingerprint == other.fingerprint
+
+    def __hash__(self):
+        # Make class instances usable as items in hashable collections
+        return hash((self.other_names, self.last_name, self.publickey, self.fingerprint))
 
 
-def enhance_entry(entry: Entry) -> Entry:
-    contact_name = entry.name.title()
+# TODO: handle nonetype better than empty string
+def parse_fingerprint(raw_fingerprint: Union[None, str]) -> str:
+    if isinstance(raw_fingerprint, str):
+        split_str = raw_fingerprint.split('Key fingerprint = ', 1)
+        if len(split_str) > 1:
+            return split_str[1][:50]
+    return ''
+
+
+# Names are hard and given the sample dataset, this works for the current publickeys
+# https://www.kalzumeus.com/2010/06/17/falsehoods-programmers-believe-about-names/ 
+def enhance_entry(entry: Entry) -> EnhancedEntry:
+    print(f'enhance_entry for {entry.name}')
+    other_names, last_name = entry.name.rsplit(' ', 1)
     key_url = parse.quote(entry.publickey)
     fingerprint = parse_fingerprint(entry.fingerprint)
-    return Entry(contact_name, key_url, fingerprint)
+    return EnhancedEntry(other_names, last_name, key_url, fingerprint)
 
 
-def sort_entries(entries: List[Entry]) -> Dict[str, List[Entry]]:
+def sort_entries(entries: List[EnhancedEntry]) -> Dict[str, List[EnhancedEntry]]:
     groups = {}
     for entry in entries:
-        group = entry.name.split(' ', 1)
-        if len(group) > 1:
-            grouping = group[1][0].upper()
+        if len(entry.last_name) > 1:
+            grouping = entry.last_name[0].upper()
             groups.setdefault(grouping, []).append(entry)
     return groups
 
 
-def create_groups(entries: Dict[str, List[Entry]]) -> List[Group]:
-    for key in entries:
-        yield Group(key, entries[key])
+def create_ordered_groups(groups: Dict[str, List[EnhancedEntry]]) -> List[Group]:
+    alphabetical_groups = sorted(groups)
+    for key in alphabetical_groups:
+        entries = groups[key]
+        yield Group(key, sorted(entries, key=lambda entry: entry.last_name))
 
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -74,7 +102,7 @@ def lambda_handler(event, context) -> None:
     session = pgp_manager.create_session()
     all_entries = pgp_manager.get_all_entries(session, DATA_BUCKET_NAME, PUBLIC_BUCKET_NAME)
     enhanced_entries = [enhance_entry(entry) for entry in all_entries]
-    all_groups = create_groups(sort_entries(enhanced_entries))
+    all_groups = create_ordered_groups(sort_entries(enhanced_entries))
     index_page = render_page(all_groups)
 
     pgp_manager.upload_files(session, PUBLIC_BUCKET_NAME, './static')
@@ -98,7 +126,7 @@ if __name__ == '__main__':
     all_entries = pgp_manager.get_all_entries(session, DATA_BUCKET_NAME, PUBLIC_BUCKET_NAME)
 
     enhanced_entries = [enhance_entry(entry) for entry in all_entries]
-    all_groups = create_groups(sort_entries(enhanced_entries))
+    all_groups = create_ordered_groups(sort_entries(enhanced_entries))
 
     if os.path.exists('./build'):
         print('Build: removing old build file')
