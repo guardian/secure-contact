@@ -59,20 +59,19 @@ def parse_fingerprint(raw_fingerprint: Union[None, str]) -> str:
 # Names are hard and given the sample dataset, this works for the current publickeys
 # https://www.kalzumeus.com/2010/06/17/falsehoods-programmers-believe-about-names/ 
 def enhance_entry(entry: Entry) -> EnhancedEntry:
-    print(f'enhance_entry for {entry.name}')
     other_names, last_name = entry.name.rsplit(' ', 1)
     key_url = parse.quote(entry.publickey)
     fingerprint = parse_fingerprint(entry.fingerprint)
     return EnhancedEntry(other_names, last_name, key_url, fingerprint)
 
 
-def sort_entries(entries: List[EnhancedEntry]) -> Dict[str, List[EnhancedEntry]]:
-    groups = {}
-    for entry in entries:
+def sort_entries(unsorted_entries: List[EnhancedEntry]) -> Dict[str, List[EnhancedEntry]]:
+    alphabetical_groups = {}
+    for entry in unsorted_entries:
         if len(entry.last_name) > 1:
             grouping = entry.last_name[0].upper()
-            groups.setdefault(grouping, []).append(entry)
-    return groups
+            alphabetical_groups.setdefault(grouping, []).append(entry)
+    return alphabetical_groups
 
 
 def create_ordered_groups(groups: Dict[str, List[EnhancedEntry]]) -> List[Group]:
@@ -99,14 +98,14 @@ def lambda_handler(event, context) -> None:
     DATA_BUCKET_NAME = os.getenv('DATA_BUCKET_NAME')
     PUBLIC_BUCKET_NAME = os.getenv('PUBLIC_BUCKET_NAME')
 
-    session = pgp_manager.create_session()
-    all_entries = pgp_manager.get_all_entries(session, DATA_BUCKET_NAME, PUBLIC_BUCKET_NAME)
+    aws_session = pgp_manager.create_session()
+    all_entries = pgp_manager.get_all_entries(aws_session, DATA_BUCKET_NAME)
     enhanced_entries = [enhance_entry(entry) for entry in all_entries]
     all_groups = create_ordered_groups(sort_entries(enhanced_entries))
     index_page = render_page(all_groups)
 
-    pgp_manager.upload_files(session, PUBLIC_BUCKET_NAME, './static')
-    pgp_manager.upload_html(session, PUBLIC_BUCKET_NAME, 'index.html', index_page)
+    pgp_manager.upload_files(aws_session, PUBLIC_BUCKET_NAME, './static')
+    pgp_manager.upload_html(aws_session, PUBLIC_BUCKET_NAME, 'index.html', index_page)
 
 
 if __name__ == '__main__':
@@ -123,10 +122,10 @@ if __name__ == '__main__':
         AWS_PROFILE = config['AWS_PROFILE']
 
     session = pgp_manager.create_session(AWS_PROFILE)
-    all_entries = pgp_manager.get_all_entries(session, DATA_BUCKET_NAME, PUBLIC_BUCKET_NAME)
+    entries = pgp_manager.get_all_entries(session, DATA_BUCKET_NAME)
 
-    enhanced_entries = [enhance_entry(entry) for entry in all_entries]
-    all_groups = create_ordered_groups(sort_entries(enhanced_entries))
+    enhanced = [enhance_entry(entry) for entry in entries]
+    groups = create_ordered_groups(sort_entries(enhanced))
 
     if os.path.exists('./build'):
         print('Build: removing old build file')
@@ -137,11 +136,8 @@ if __name__ == '__main__':
 
     print('Build: creating templates')
     text_file = open("build/index.html", "w")
-    text_file.write(render_page(all_groups))
+    text_file.write(render_page(groups))
     text_file.close()
 
     print('Build: Done!')
 
-    pgp_manager.upload_files(session, PUBLIC_BUCKET_NAME, './build')
-
-    print('Upload: Done!')

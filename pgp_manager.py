@@ -1,4 +1,4 @@
-import boto3, botocore, os, json
+import boto3, os, json
 
 from typing import Dict, List, Any, Union
 from boto3 import Session
@@ -90,16 +90,24 @@ def get_matching_s3_keys(s3_client, bucket: str, prefix: str) -> List[str]:
         yield obj['Key']
 
 
+def should_be_public(entry: Entry) -> bool:
+    if '.pub.txt' not in entry.publickey:
+        print(f'WARNING: should_be_public check did not pass for {entry.publickey}')
+        return False
+    return True
+
+
 # should copy a list of s3 objects from one bucket to another, preserving the directory structure
-def copy_keys_to_public_bucket(s3_client, source_bucket: str, destination_bucket: str, public_keys: List[str]) -> None:
-    # should also set public read on the object
+def copy_keys_to_public_bucket(session: Session, source_bucket: str, dest_bucket: str, entries: List[Entry]) -> None:
     # could we set a lifecycle on the bucket to deal with old keys?
-    for key in public_keys:
-        copy_source = {
-            'Bucket': source_bucket,
-            'Key': key
-        }
-        s3_client.copy(copy_source, destination_bucket, key)
+    client = session.client('s3')
+    for entry in entries:
+        if should_be_public(entry):
+            copy_source = {
+                'Bucket': source_bucket,
+                'Key': entry.publickey
+            }
+            client.copy(copy_source, dest_bucket, entry.publickey)
 
 
 def get_content_type(filename: str) -> str:
@@ -116,22 +124,18 @@ def upload_html(session: Session, bucket: str, key: str, body: str) -> None:
 
 
 def upload_files(session: Session, bucket: str, path: str) -> None:
-    s3 = session.resource('s3')
-    bucket = s3.Bucket(bucket)
+    client = session.client('s3')
     for subdir, dirs, files in os.walk(path):
         for file in files:
             content_type = get_content_type(file)
             full_path = os.path.join(subdir, file)
-            print(full_path)
-            with open(full_path, 'rb') as data:
-                bucket.upload_file(full_path, full_path[len(path)+1:], ExtraArgs={'ContentType': content_type})
+            client.upload_file(full_path, bucket, full_path, ExtraArgs={'ContentType': content_type})
 
 
 # fetch all of the required data from S3 and return a List containing an Entry for each contact
-def get_all_entries(session: Session, data_bucket: str, public_bucket: str) -> List[Entry]:
+def get_all_entries(session: Session, data_bucket: str) -> List[Entry]:
     client = session.client('s3')
     public_keys = list(get_matching_s3_keys(client, data_bucket, 'PublicKeys/'))
-    # copy_keys_to_public_bucket(client, data_bucket, public_bucket, public_keys)
     return [generate_entry(client, data_bucket, key) for key in public_keys]
 
 
@@ -149,5 +153,7 @@ if __name__ == "__main__":
         AWS_PROFILE = config['AWS_PROFILE']
 
     aws_session = create_session(AWS_PROFILE)
-    get_all_entries(aws_session, DATA_BUCKET_NAME, PUBLIC_BUCKET_NAME)
+    all_entries = get_all_entries(aws_session, DATA_BUCKET_NAME)
+
+    copy_keys_to_public_bucket(aws_session, DATA_BUCKET_NAME, PUBLIC_BUCKET_NAME, all_entries)
     upload_files(aws_session, PUBLIC_BUCKET_NAME, './build')
