@@ -30,11 +30,6 @@ def parse_name(key: str) -> str:
     return key.replace('PublicKeys/', '').replace('.pub.txt', '')
 
 
-# TODO: can we autogenerate the fingerprint?
-def generate_fingerprint(s3_client, bucket: str, name: str) -> str:
-    return ''
-
-
 # Not all public keys will have a corresponding fingerprint
 def fetch_fingerprint(s3_client, bucket: str, name: str) -> Union[None, str]:
     key = f'Fingerprints/{name}.fpr.txt'
@@ -152,8 +147,3 @@ if __name__ == "__main__":
         PUBLIC_BUCKET_NAME = config['PUBLIC_BUCKET_NAME']
         AWS_PROFILE = config['AWS_PROFILE']
 
-    aws_session = create_session(AWS_PROFILE)
-    all_entries = get_all_entries(aws_session, DATA_BUCKET_NAME)
-
-    copy_keys_to_public_bucket(aws_session, DATA_BUCKET_NAME, PUBLIC_BUCKET_NAME, all_entries)
-    upload_files(aws_session, PUBLIC_BUCKET_NAME, './build')
