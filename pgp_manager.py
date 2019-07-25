@@ -118,13 +118,14 @@ def upload_html(session: Session, bucket: str, key: str, body: str) -> None:
     client.put_object(Body=body, Bucket=bucket, Key=key, ContentType=content_type)
 
 
-def upload_files(session: Session, bucket: str, path: str) -> None:
+def upload_files(session: Session, bucket: str, path: str, prefix: str = '') -> None:
     client = session.client('s3')
     for subdir, dirs, files in os.walk(path):
         for file in files:
             content_type = get_content_type(file)
             full_path = os.path.join(subdir, file)
-            client.upload_file(full_path, bucket, full_path, ExtraArgs={'ContentType': content_type})
+            s3path = prefix + file
+            client.upload_file(full_path, bucket, s3path, ExtraArgs={'ContentType': content_type})
 
 
 # fetch all of the required data from S3 and return a List containing an Entry for each contact
