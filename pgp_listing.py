@@ -100,11 +100,14 @@ def lambda_handler(event, context) -> None:
 
     aws_session = pgp_manager.create_session()
     all_entries = pgp_manager.get_all_entries(aws_session, DATA_BUCKET_NAME)
+
+    pgp_manager.copy_keys_to_public_bucket(aws_session, DATA_BUCKET_NAME, PUBLIC_BUCKET_NAME, all_entries)
+    pgp_manager.upload_files(aws_session, PUBLIC_BUCKET_NAME, 'static/', 'static/')
+
     enhanced_entries = [enhance_entry(entry) for entry in all_entries]
     all_groups = create_ordered_groups(sort_entries(enhanced_entries))
     index_page = render_page(all_groups)
 
-    pgp_manager.upload_files(aws_session, PUBLIC_BUCKET_NAME, './static')
     pgp_manager.upload_html(aws_session, PUBLIC_BUCKET_NAME, 'index.html', index_page)
 
 
