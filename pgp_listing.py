@@ -4,7 +4,7 @@ import json
 import pgp_manager
 
 from pgp_manager import Entry
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader, select_autoescape, Markup
 from urllib import parse
 
 from typing import Dict, List, Union
@@ -27,11 +27,12 @@ class Group:
 
 
 class EnhancedEntry:
-    def __init__(self, other_names, last_name, publickey, fingerprint):
+    def __init__(self, other_names, last_name, publickey, fingerprint, email):
         self.other_names = other_names
         self.last_name = last_name
         self.publickey = publickey
         self.fingerprint = fingerprint
+        self.email = email
 
     def __str__(self):
         return f'{str(self.__class__)}: {str(self.__dict__)}'
@@ -40,11 +41,11 @@ class EnhancedEntry:
         if not isinstance(other, EnhancedEntry):
             return NotImplemented
 
-        return self.other_names == other.other_names and self.last_name == other.last_name and self.publickey == other.publickey and self.fingerprint == other.fingerprint
+        return self.other_names == other.other_names and self.last_name == other.last_name and self.publickey == other.publickey and self.fingerprint == other.fingerprint and self.email == other.email
 
     def __hash__(self):
         # Make class instances usable as items in hashable collections
-        return hash((self.other_names, self.last_name, self.publickey, self.fingerprint))
+        return hash((self.other_names, self.last_name, self.publickey, self.fingerprint, self.email))
 
 
 # TODO: handle nonetype better than empty string
@@ -56,13 +57,24 @@ def parse_fingerprint(raw_fingerprint: Union[None, str]) -> str:
     return ''
 
 
+def parse_email(raw_fingerprint: Union[None, str]) -> str:
+    # Leira is revered as the goddess of illusion in the Forgotten Realms
+    obscure = '<span class="leira">leira</span>[@]<span class="leira">illusion</span>'
+    if isinstance(raw_fingerprint, str):
+        raw_email = raw_fingerprint[raw_fingerprint.find('<')+1:raw_fingerprint.find('>')]
+        if len(raw_email) > 1 and '@' in raw_email:
+            return Markup(raw_email.replace('@', obscure))
+    return ''
+
+
 # Names are hard and given the sample dataset, this works for the current publickeys
 # https://www.kalzumeus.com/2010/06/17/falsehoods-programmers-believe-about-names/ 
 def enhance_entry(entry: Entry) -> EnhancedEntry:
     other_names, last_name = entry.name.rsplit(' ', 1)
     key_url = parse.quote(entry.publickey)
     fingerprint = parse_fingerprint(entry.fingerprint)
-    return EnhancedEntry(other_names, last_name, key_url, fingerprint)
+    email = parse_email(entry.fingerprint)
+    return EnhancedEntry(other_names, last_name, key_url, fingerprint, email)
 
 
 def sort_entries(unsorted_entries: List[EnhancedEntry]) -> Dict[str, List[EnhancedEntry]]:
