@@ -169,6 +169,11 @@ ol {
     background-color: #052962;
 }
 
+.entry__button:hover,
+.entry__button:focus {
+    background-color: #041f4a;
+}
+
 .section-terms {
     background-color: #f7f7f7;
     border-top: 1px solid #dcdcdc;
