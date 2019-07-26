@@ -11,6 +11,11 @@ class TestSortingEntries(unittest.TestCase):
         uid       [ unknown] Kate Whalen <Kate.Whalen@theguardian.com>\n
         sub 2048R/8FA007E8 2019-03-11"""
 
+    def test_parse_email(self):
+        expected = parse_email(self.raw_fingerprint)
+        self.assertEqual('Kate.Whalen<span class="leira">leira</span>[@]<span '
+                         'class="leira">illusion</span>theguardian.com', expected)
+
     def test_parse_fingerprint(self):
         expected = parse_fingerprint(self.raw_fingerprint)
         self.assertEqual('6FD2 E4C9 71AD B9BB 1573  85EA 383B C341 85FB BD09', expected)
@@ -24,21 +29,21 @@ class TestSortingEntries(unittest.TestCase):
 
     def test_sort_entries(self):
         result = sort_entries([
-            EnhancedEntry('Sam', 'Cutler', 'cutler pk', 'cutler fp'),
-            EnhancedEntry('David', 'Blishen', 'blishen pk', 'blishen fp'),
-            EnhancedEntry('Kate', 'Whalen', 'whalen pk', 'whalen fp'),
-            EnhancedEntry('Michael', 'Barton', 'barton pk', 'barton fp')
+            EnhancedEntry('Sam', 'Cutler', 'cutler pk', 'cutler fp', 'email@example'),
+            EnhancedEntry('David', 'Blishen', 'blishen pk', 'blishen fp', 'email@example'),
+            EnhancedEntry('Kate', 'Whalen', 'whalen pk', 'whalen fp', 'email@example'),
+            EnhancedEntry('Michael', 'Barton', 'barton pk', 'barton fp', 'email@example')
         ])
         expected = {
             'B': [
-                EnhancedEntry('David', 'Blishen', 'blishen pk', 'blishen fp'),
-                EnhancedEntry('Michael', 'Barton', 'barton pk', 'barton fp')
+                EnhancedEntry('David', 'Blishen', 'blishen pk', 'blishen fp', 'email@example'),
+                EnhancedEntry('Michael', 'Barton', 'barton pk', 'barton fp', 'email@example')
             ],
             'C': [
-                EnhancedEntry('Sam', 'Cutler', 'cutler pk', 'cutler fp'),
+                EnhancedEntry('Sam', 'Cutler', 'cutler pk', 'cutler fp', 'email@example'),
             ],
             'W': [
-                EnhancedEntry('Kate', 'Whalen', 'whalen pk', 'whalen fp'),
+                EnhancedEntry('Kate', 'Whalen', 'whalen pk', 'whalen fp', 'email@example'),
             ]
         }
         self.assertEqual(result, expected)
@@ -46,27 +51,27 @@ class TestSortingEntries(unittest.TestCase):
     def test_create_ordered_groups(self):
         result = list(create_ordered_groups({
             'B': [
-                EnhancedEntry('David', 'Blishen', 'blishen pk', 'blishen fp'),
-                EnhancedEntry('Michael', 'Barton', 'barton pk', 'barton fp')
+                EnhancedEntry('David', 'Blishen', 'blishen pk', 'blishen fp', 'email@example'),
+                EnhancedEntry('Michael', 'Barton', 'barton pk', 'barton fp', 'email@example')
             ],
             'C': [
-                EnhancedEntry('Sam', 'Cutler', 'cutler pk', 'cutler fp'),
+                EnhancedEntry('Sam', 'Cutler', 'cutler pk', 'cutler fp', 'email@example'),
             ],
             'W': [
-                EnhancedEntry('Kate', 'Whalen', 'whalen pk', 'whalen fp'),
+                EnhancedEntry('Kate', 'Whalen', 'whalen pk', 'whalen fp', 'email@example'),
             ]
         }))
 
         self.assertEqual(result[0], Group('B', [
-                EnhancedEntry('Michael', 'Barton', 'barton pk', 'barton fp'),
-                EnhancedEntry('David', 'Blishen', 'blishen pk', 'blishen fp')
+                EnhancedEntry('Michael', 'Barton', 'barton pk', 'barton fp', 'email@example'),
+                EnhancedEntry('David', 'Blishen', 'blishen pk', 'blishen fp', 'email@example')
             ]))
 
         self.assertEqual(result[1], Group('C', [
-                EnhancedEntry('Sam', 'Cutler', 'cutler pk', 'cutler fp'),
+                EnhancedEntry('Sam', 'Cutler', 'cutler pk', 'cutler fp', 'email@example'),
             ]))
         self.assertEqual(result[2], Group('W', [
-                EnhancedEntry('Kate', 'Whalen', 'whalen pk', 'whalen fp'),
+                EnhancedEntry('Kate', 'Whalen', 'whalen pk', 'whalen fp', 'email@example'),
             ]))
 
 
