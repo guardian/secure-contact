@@ -5,6 +5,10 @@
     --gu-yellow-2: #ffe500;
 }
 
+.leira {
+    display: none;
+}
+
 .gu-padding {
     padding: 12px;
 }
@@ -128,11 +132,6 @@ ol {
     border: none;
 }
 
-.entry__link {
-    padding: 6px;
-    margin: 0 6px;
-}
-
 /* For listings */
 .js-group[data-hidden] {
     display: none;
@@ -147,17 +146,27 @@ ol {
     font-size: 1.2rem;
 }
 
-.fingerprint__label {
+.entry__fingerprint {
     margin-top: 12px;
+    margin-bottom: 12px;
     font-family: Guardian Text Sans Web,Helvetica Neue,Helvetica,Arial,Lucida Grande,sans-serif;
-
 }
 
-.fingerprint {
+.entry__link {
+    padding: 6px;
+    margin: 0 6px;
+}
+
+.fingerprint,
+.email {
     font-family: monospace;
     margin: 12px;
     padding: 6px;
     background-color: #f7f7f7;
+}
+
+.entry__button {
+    background-color: #052962;
 }
 
 .section-terms {
