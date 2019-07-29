@@ -73,8 +73,14 @@ def parse_email(raw_fingerprint: Union[None, str]) -> str:
         email_result = [string for string in raw_fingerprint.split(' ') if '@' in string]
         # there should be exactly one result or something has gone horribly wrong...
         if len(email_result) == 1:
-            stripped_email = email_result[0].rstrip()
-            return stripped_email
+            # why not rstrip? Strange, there is a single edge case that is really stubborn
+            # so instead we are going to find the index of the expected end of the email
+            email_end = max([
+                email_result[0].find('guardian.co.uk') + 14,
+                email_result[0].find('guardian.com') + 12]
+            )
+            email = email_result[0][:email_end]
+            return email
     return ''
 
 

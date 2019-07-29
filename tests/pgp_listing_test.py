@@ -2,6 +2,8 @@ import unittest
 
 from pgp_listing import *
 
+EDGE_CASE = os.path.join(os.path.dirname(__file__), 'edge_case.fpr.txt')
+
 
 class TestSortingEntries(unittest.TestCase):
     def setUp(self) -> None:
@@ -16,6 +18,12 @@ class TestSortingEntries(unittest.TestCase):
         Key fingerprint = 6FD2 E4C9 71AD B9BB 1573  85EA 383B C341 85FB BD09\n
         uid       [ unknown] Kate.Whalen@theguardian.com\n\n"""
 
+        self.edge_case = open(EDGE_CASE)
+        self.edge_case_content = self.edge_case.read()
+
+    def tearDown(self) -> None:
+        self.edge_case.close()
+
     def test_parse_fingerprint(self):
         expected = parse_fingerprint(self.fingerprint)
         self.assertEqual('6FD2 E4C9 71AD B9BB 1573  85EA 383B C341 85FB BD09', expected)
@@ -27,6 +35,10 @@ class TestSortingEntries(unittest.TestCase):
     def test_parse_email_without_angle_brackets(self):
         expected = parse_email(self.fingerprint_without_angle_brackets)
         self.assertEqual('Kate.Whalen@theguardian.com', expected)
+
+    def test_parse_email_from_edge_case(self):
+        expected = parse_email(self.edge_case_content)
+        self.assertEqual('edge.case@guardian.co.uk', expected)
 
     def test_obscure_email(self):
         expected = obscure_email('Kate.Whalen@theguardian.com')
