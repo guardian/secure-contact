@@ -57,13 +57,24 @@ def parse_fingerprint(raw_fingerprint: Union[None, str]) -> str:
     return ''
 
 
-def parse_email(raw_fingerprint: Union[None, str]) -> str:
+def obscure_email(raw_email: Union[None, str]) -> str:
     # Leira is revered as the goddess of illusion in the Forgotten Realms
     obscure = '<span class="leira">leira</span>[@]<span class="leira">illusion</span>'
+    if '@' in raw_email:
+        return Markup(raw_email.replace('@', obscure))
+
+
+def parse_email(raw_fingerprint: Union[None, str]) -> str:
     if isinstance(raw_fingerprint, str):
-        raw_email = raw_fingerprint[raw_fingerprint.find('<')+1:raw_fingerprint.find('>')]
-        if len(raw_email) > 1 and '@' in raw_email:
-            return Markup(raw_email.replace('@', obscure))
+        if '<' in raw_fingerprint:
+            return raw_fingerprint[raw_fingerprint.find('<')+1:raw_fingerprint.find('>')]
+        # once we split the string, there should only be one that contains a @ symbol
+        # so we can use list comprehension to find the one we want...
+        email_result = [string for string in raw_fingerprint.split(' ') if '@' in string]
+        # there should be exactly one result or something has gone horribly wrong...
+        if len(email_result) == 1:
+            stripped_email = email_result[0].rstrip()
+            return stripped_email
     return ''
 
 
@@ -73,7 +84,7 @@ def enhance_entry(entry: Entry) -> EnhancedEntry:
     other_names, last_name = entry.name.rsplit(' ', 1)
     key_url = parse.quote(entry.publickey)
     fingerprint = parse_fingerprint(entry.fingerprint)
-    email = parse_email(entry.fingerprint)
+    email = obscure_email(parse_email(entry.fingerprint))
     return EnhancedEntry(other_names, last_name, key_url, fingerprint, email)
 
 

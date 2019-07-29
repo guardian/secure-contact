@@ -29,7 +29,6 @@ mkdir -p target/$APP
 pip install --target target/packages -r requirements.txt
 
 # archive entire directory and subdirectories using maximum compression
-
 cd target/packages
 zip -r9 $OLDPWD/target/$APP/$APP.zip .
 cd $OLDPWD
