@@ -38,7 +38,12 @@ def fetch_fingerprint(s3_client, bucket: str, name: str) -> Union[None, str]:
         return str(s3_obj['Body'].read())
     except ClientError as e:
         if e.response['Error']['Code'] == 'NoSuchKey':
-            print(f'WARNING: fetch_fingerprint NoSuchKey {key}')
+            log = json.dumps({
+                'app': 'secure-contact',
+                'function': 'fetch_fingerprint',
+                'message': f'NoSuchKey: {key}'
+            })
+            print(log)
         else:
             raise e
 
