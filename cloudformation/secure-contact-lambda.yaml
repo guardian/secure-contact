@@ -184,7 +184,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       CodeUri: 
         Bucket: !Ref ArtifactBucket
-        Key: !Sub ${Stack}/${Stage}/${App}/lambda.zip
+        Key: !Sub ${Stack}/${Stage}/${App}/secure-contact.zip
       Runtime: python3.7
       Handler: pgp_listing.lambda_handler
       Environment:

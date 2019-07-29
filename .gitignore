@@ -25,4 +25,4 @@ __pycache__
 # Outputted and generated files
 
 /build/
-/package/
+/target/
