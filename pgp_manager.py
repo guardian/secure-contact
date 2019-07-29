@@ -115,6 +115,8 @@ def get_content_type(filename: str) -> str:
         return 'text/html'
     if filename.endswith('.css'):
         return 'text/css'
+    if filename.endswith('.ico'):
+        return 'image/x-icon'
 
 
 def upload_html(session: Session, bucket: str, key: str, body: str) -> None:
