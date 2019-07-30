@@ -96,7 +96,7 @@ Resources:
       BucketName: !Ref PublicBucketName
       LifecycleConfiguration:
         Rules:
-          - ExpirationInDays: 28
+          - ExpirationInDays: 7
             Status: Enabled
       WebsiteConfiguration:
         IndexDocument: index.html
@@ -122,9 +122,6 @@ Resources:
           Resource:
             - !Sub arn:aws:s3:::${PublicBucket}/*
           Principal: "*"
-          Condition:
-            IpAddress:
-              aws:SourceIp: !Ref AccessRestrictionCidr
 
 # ----------------------- #
 #  SECURE CONTACT LAMBDA  #
