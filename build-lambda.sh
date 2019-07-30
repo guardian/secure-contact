@@ -51,5 +51,5 @@ cat >build.json << EOF
 EOF
 
 # upload the package to S3
-aws s3 cp --acl bucket-owner-full-control --region=eu-west-1 --recursive target/packages s3://riffraff-artifact/$PROJECT/$BUILD_NUMBER
+aws s3 cp --acl bucket-owner-full-control --region=eu-west-1 --recursive target/$APP/ s3://riffraff-artifact/$PROJECT/$BUILD_NUMBER
 aws s3 cp --acl bucket-owner-full-control --region=eu-west-1 build.json s3://riffraff-builds/$PROJECT/$BUILD_NUMBER/build.json
