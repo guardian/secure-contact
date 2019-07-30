@@ -34,12 +34,6 @@ Parameters:
     Type: String
     Default: secure-contact
 
-  AccessRestrictionCidr:
-    Description: A CIDR from which access is allowed
-    AllowedPattern: ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}$
-    ConstraintDescription: Parameter should be a CIDR block e.g. "1.2.3.4/32"
-    Type: String
-
 Resources:
 
 # ----------------------- #
