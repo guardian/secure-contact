@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}The Guardian PGP{% endblock %}
+
+{% block stylesheets %}
+<link rel="stylesheet" type="text/css" href="securedrop/static/materialize.min.css" />
+<link rel="stylesheet" type="text/css" href="securedrop/static/public.css" />
+{% endblock %}
+
+{% block content %}
+
+<main role='main' class='body'>
+  <section class="row">
+      <div class="intro container">
+          <div class='intro__over-heading'>The Guardian SecureDrop</div>
+          <div class='intro__heading'>
+              <div class='intro__heading-text'>
+                  Share stories with us securely and confidentially
+              </div>
+          </div>
+      </div>
+  </section>
+  <section class="row">
+      <div class="section-content container gu-padding">
+          <p>
+              If used as directed, <span class="gu-bold">the Guardian SecureDrop</span> service allows you to share files with the
+              Guardian confident of complete anonymity.
+          </p>
+          <p>
+              Encrypting the contents of an email using public key cryptographic methods is a good way to avoid
+              compromising the content.
+          </p>
+          <p>
+              While the platform itself uses Tor hidden services to support anonymity, it is advisable to be careful
+              where you access it from. You should avoid using the platform on small networks where use of Tor may be
+              monitored or restricted, or in public places where your screen may be viewed by CCTV. We recommend that
+              you don't jump straight from this landing page to the SecureDrop site, especially on business networks
+              that may be monitored. Best practice would be to make a note of the Tor URL (see below) and then to
+              upload your content from a different machine at a later time.
+          </p>
+      </div>
+  </section>
+
+  <section class='sd-status row'>
+      <div class="sd-status__container container gu-padding">
+        <div class='sd-status__message'>
+            The Guardian SecureDrop service is available.
+        </div>
+      </div>
+  </section>
+
+  <section class="row">
+      <div class="section-content container gu-padding">
+        <h4 class='gu-heading'>How to access the Guardian's SecureDrop service</h4>
+
+        <ol class="circles-list">
+          <li>
+            Download and install software to access the Tor network: <a href="https://torproject.org/">https://www.torproject.org</a>.
+            For security reasons, we advise you, especially if you are uploading documents, not to use your home or work network, but instead to use a public Wi-Fi network in an  area where your screen is not visible to security cameras. Alternately, you can start up your computer from a USB key loaded with the Tails secure operating system, which is available at <a href="https://tails.boum.org/">https://tails.boum.org</a> and includes the Tor web browser.
+          </li>
+          <li>
+            Once you launch the Tor browser, copy and paste the URL <span class="onion-url">33y6fjyhs3phzfjj.onion</span> into the Tor address bar. When the page loads, you will find further instructions on how to submit files and messages to the Guardian.
+          </li>
+
+          <li>
+            You will be assigned a randomly generated and unique code phrase. If a writer or editor at the Guardian wants to contact you about the information you have submitted, he or she will leave a message for you in SecureDrop. The messages can only be accessed using your code name. These messages are the only way we will be able to reach you.
+          </li>
+        </ol>
+
+        <div class="securedrop">
+            <div class="securedrop__text">
+              The SecureDrop software is an open source project sponsored by the <a href="https://freedom.press">Freedom of the Press Foundation.</a> The software has been through thorough independent security reviews to ensure that it meets stringent confidentiality and anti-leakage requirements. The platform has been built and commissioned with the latest fixes for the Heartbleed SSL vulnerability.
+            </div>
+            <a href="https://freedom.press">
+              <img class="securedrop__logo right" src="securedrop/static/securedrop.jpg">
+            </a>
+        </div>
+
+</div>
+</section>
+
+  <section class="row sd-pgp">
+    <div class="sd-pgp__content container gu-padding">
+      <h4 class='gu-heading'>The Guardian PGP Keys</h4>
+      <p>If SecureDrop is unavailable or Tor is blocked for you, there is a secure alternative for confidential messaging.</p>
+      <p>Create a dummy email account and use a PGP email plugin or client to send an encrypted email using your intended Guardian contact PGP Public key. For other ways to contact the Guardian see <a href="https://www.theguardian.com/help/ng-interactive/2017/mar/17/contact-the-guardian-securely">Contact the Guardian securely</a>.</p>
+      
+      <a class="btn sd-pgp__button" href="https://theguardian.com/pgp">
+        <i class="material-icons right">
+          <svg class="gu-icon" width="30" height="30" viewBox="0 0 30 30">
+            <path d="M22.8 14.6L15.2 7l-.7.7 5.5 6.6H6v1.5h14l-5.5 6.6.7.7 7.6-7.6v-.9"></path>
+          </svg>
+        </i>List of PGP Keys</a>
+    </div>
+  </section>
+
+  <section class="row section-terms">
+    <div class="container gu-padding">
+      <h6 class="section-terms__title">Terms and conditions</h6>
+      <p class="section-terms__text">If you are using the Tor browser you should ensure that there is no keylogging malware on your PC, Mac or tablet. The Tails live operating system may be preferable.</p>
+      <p class="section-terms__text">Any content uploaded to the platform will be treated in the utmost confidentiality by us to protect your anonymity unless you indicate you wish to waive it.</p>
+      <p class="section-terms__text">Uploading of content to the platform is no guarantee that an article will be published referencing that data. Guardian editorial policy will be the ultimate arbiter of what is used.</p>
+      <p class="section-terms__text">When accessing this landing page we will not set cookies, fingerprint your browser/machine or display third party content.</p>
+      <p class="section-terms__text">When accessing the Guardian SecureDrop platform we will not log your IP address, we will not set cookies, fingerprint your browser/machine or display third party content.</p>
+      <p class="section-terms__text">Do not abuse the platform by uploading pornographic or obscene imagery.</p>
+      <p class="section-terms__text">Use of the Guardian SecureDrop platform is at the user's own risk.</p>
+    </div>
+  </section>
+</main>
+{% endblock %}
