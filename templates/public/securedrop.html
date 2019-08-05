@@ -42,9 +42,17 @@
 
   <section class='sd-status row'>
       <div class="sd-status__container container gu-padding">
-        <div class='sd-status__message'>
-            The Guardian SecureDrop service is available.
-        </div>
+
+          {% if passes_healthcheck %}
+            <div class='sd-status__message'>
+                The Guardian SecureDrop service is available.
+            </div>
+          {% else %}
+            <div class='sd-status__message sd-maintenance'>
+                The Guardian SecureDrop service is temporarily unavailable. Please try again later!
+            </div>
+          {% endif %}
+
       </div>
   </section>
 
