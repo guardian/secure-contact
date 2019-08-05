@@ -2,7 +2,7 @@
 
 <html>
   <head>
-    <title>{{ title }}</title>
+    <title>{% block title %}{% endblock %}</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta
       http-equiv="X-UA-Compatible"
@@ -13,8 +13,7 @@
       type="image/png"
       href="https://theguardian.com/favicon.ico"
     />
-    <link rel="stylesheet" type="text/css" href="/pgp/static/materialize.min.css" />
-    <link rel="stylesheet" type="text/css" href="/pgp/static/public.css" />
+    {% block stylesheets %}{% endblock %}
   </head>
 
   <body>
