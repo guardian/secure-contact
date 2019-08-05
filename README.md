@@ -58,3 +58,12 @@ python3 -m http.server
 ```
 
 The default port is 8000.
+
+
+## Validation
+
+The following command will run the Python tests:
+
+```bash
+python -m unittest discover -s tests
+```
