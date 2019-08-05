@@ -3,6 +3,10 @@
     --gu-blue: #052962;
     --gu-yellow-1: #FFF280;
     --gu-yellow-2: #ffe500;
+    --gu-black: #121212;
+
+    --sc-blue-1: #CCE8f7;
+    --sc-blue-2: #C6E1Ef;
 }
 
 .leira {
@@ -16,7 +20,6 @@
 .row {
     margin: 0;
 }
-
 
 body {
     margin: 0;
@@ -63,6 +66,17 @@ ol {
 .section-content {
     border-left: 1px solid #dcdcdc;
     border-right: 1px solid #dcdcdc;
+    line-height: 1.8rem;
+}
+
+.collection {
+    border: none;
+}
+
+.gu-heading {
+    font-family: "Guardian Egyptian Web",Georgia,serif;
+    font-size: 2rem;
+    font-weight: 900;
 }
 
 /*
@@ -76,24 +90,27 @@ ol {
 
 .intro__over-heading {
     font-size: 1.5rem;
-    line-height: 1.125rem;
     display: inline-block;
     line-height: 1;
     background-color: #ffe500;
     color: #121212;
-    padding: .375rem .625rem;
+    padding: .5rem .625rem;
 }
 
 .intro__heading {
-    background: black;
+    background: #121212;
     color: white;
     padding: .1875rem .625rem 2.25rem;
 }
 
 .intro__heading-text {
     font-size: 2.625rem;
-    line-height: 2.8125rem;
+    line-height: 3rem;
     max-width: 25rem;
+}
+
+.intro__heading-text--sd {
+    max-width: 40rem;
 }
 
 /*
@@ -101,7 +118,7 @@ ol {
  */
 .filter {
     background: #FFF280;
-    color: white;
+    color: fff;
 }
 
 .filter__container {
@@ -116,9 +133,9 @@ ol {
     font-size: 1rem;
     max-width: 60%;
     width: 25rem;
-
     color: #767676;
 }
+
 .filter__input:hover,
 .filter__input:focus {
     outline: none;
@@ -128,8 +145,25 @@ ol {
     color: #dcdcdc;
 }
 
-.collection {
-    border: none;
+/* SecureDrop status */
+.sd-status {
+    background: #C6E1Ef;
+}
+
+.sd-status__container {
+    background: #CCE8f7;
+}
+
+.sd-status__message {
+    background: #1d3e71;
+    border-radius: 30px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 10px 20px;
+    width: -moz-fit-content;
+    width: -webkit-fit-content;
+    width: fit-content;
 }
 
 /* For listings */
@@ -170,8 +204,10 @@ ol {
 }
 
 .entry__button:hover,
-.entry__button:focus {
-    background-color: #041f4a;
+.entry__button:focus,
+.sd-pgp__button:hover,
+.sd-pgp__button:focus {
+    background-color: #041f4A;
 }
 
 .section-terms {
@@ -198,4 +234,77 @@ ol {
     font-size: .8rem;
     font-weight: 300;
     font-family: Guardian Text Sans Web,Helvetica Neue,Helvetica,Arial,Lucida Grande,sans-serif;
+}
+
+/* SecureDrop styles */
+
+.circles-list {
+    list-style-type: none;
+    margin: 0 0 0 4rem;
+    padding: 0;
+    counter-reset: li-counter;
+}
+
+.circles-list > li {
+    position: relative;
+    margin-bottom: 24px;
+    padding-left: 5em;
+    min-height: 60px
+}
+
+.circles-list > li:before {
+    position: absolute;
+    top: 0;
+    left: -0.1rem;
+    width: 4rem;
+    height: 4rem;
+    font-size: 3rem;
+    line-height: 1.4;
+    text-align: center;
+    color: #fff;
+    border-radius: 50%;
+    background-color: #052962;
+    font-family:'DE3';
+    content: counter(li-counter);
+    counter-increment: li-counter;
+}
+
+.onion-url {
+    font-weight: 900;
+}
+
+.securedrop {
+    display: flex;
+}
+
+.securedrop__logo {
+    width: 120px;
+    max-width: 120px;
+    margin: 10px;
+}
+
+.sd-pgp {
+    background-color: #C6E1Ef;
+}
+
+.sd-pgp__content {
+    background-color: #CCE8f7;
+    line-height: 1.8rem;
+}
+
+.sd-pgp__button {
+    text-decoration: none;
+    color: #fff;
+    background-color: #1d3e71;
+    letter-spacing: .5px;
+    cursor: pointer;
+    border-radius: 100px;
+    text-transform: none;
+    box-shadow: none;
+    margin: 6px 0;
+}
+
+.gu-icon {
+    vertical-align: middle;
+    fill: #fff;
 }
