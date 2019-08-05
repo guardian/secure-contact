@@ -79,6 +79,11 @@ ol {
     font-weight: 900;
 }
 
+.gu-icon {
+    vertical-align: middle;
+    fill: #fff;
+}
+
 /*
  * Intro - that bit at the top with the yellow and black
  */
@@ -304,7 +309,6 @@ ol {
     margin: 6px 0;
 }
 
-.gu-icon {
-    vertical-align: middle;
-    fill: #fff;
+.sd-maintenance {
+    background-color: #cc2b12;
 }
