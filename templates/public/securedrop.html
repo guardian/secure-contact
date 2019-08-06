@@ -1,10 +1,5 @@
 {% extends "base.html" %}
-{% block title %}The Guardian PGP{% endblock %}
-
-{% block stylesheets %}
-<link rel="stylesheet" type="text/css" href="securedrop/static/materialize.min.css" />
-<link rel="stylesheet" type="text/css" href="securedrop/static/public.css" />
-{% endblock %}
+{% block title %}The Guardian SecureDrop{% endblock %}
 
 {% block content %}
 
@@ -79,7 +74,7 @@
               The SecureDrop software is an open source project sponsored by the <a href="https://freedom.press">Freedom of the Press Foundation.</a> The software has been through thorough independent security reviews to ensure that it meets stringent confidentiality and anti-leakage requirements. The platform has been built and commissioned with the latest fixes for the Heartbleed SSL vulnerability.
             </div>
             <a href="https://freedom.press">
-              <img class="securedrop__logo right" src="securedrop/static/securedrop.jpg">
+              <img class="securedrop__logo right" src="{{ '%sstatic/securedrop.jpg' %path }}">
             </a>
         </div>
 
