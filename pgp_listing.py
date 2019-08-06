@@ -118,9 +118,9 @@ env = Environment(
 )
 
 
-def render_page(groups: List[Group]):
+def render_page(path: str, groups: List[Group]):
     root_template = env.get_template('pgp-listing.html')
-    return root_template.render(groups=groups)
+    return root_template.render(path=path, groups=groups)
 
 
 def lambda_handler(event, context) -> None:
@@ -135,7 +135,7 @@ def lambda_handler(event, context) -> None:
 
     enhanced_entries = [enhance_entry(entry) for entry in all_entries]
     all_groups = create_ordered_groups(sort_entries(enhanced_entries))
-    index_page = render_page(all_groups)
+    index_page = render_page('pgp/', all_groups)
 
     pgp_manager.upload_html(aws_session, PUBLIC_BUCKET_NAME, 'index.html', index_page)
 
@@ -168,7 +168,7 @@ if __name__ == '__main__':
 
     print('Build: creating templates')
     text_file = open("build/index.html", "w")
-    text_file.write(render_page(groups))
+    text_file.write(render_page('', groups))
     text_file.close()
 
     print('Build: Done!')

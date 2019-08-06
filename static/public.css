@@ -74,7 +74,6 @@ ol {
 }
 
 .gu-heading {
-    font-family: "Guardian Egyptian Web",Georgia,serif;
     font-size: 2rem;
     font-weight: 900;
 }
@@ -123,7 +122,7 @@ ol {
  */
 .filter {
     background: #FFF280;
-    color: fff;
+    color: #fff;
 }
 
 .filter__container {
