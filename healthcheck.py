@@ -1,8 +1,84 @@
-import requests, time
+import requests, logging, time
 
+from boto3 import Session
+from botocore.exceptions import ClientError
 from requests.exceptions import RequestException
 
 from typing import Optional
+
+
+CHARSET = "UTF-8"
+
+
+def create_session(profile=None) -> Session:
+    return Session(profile_name=profile)
+
+
+def fetch_parameter(client, name: str) -> str:
+    response = client.get_parameter(Name=name, WithDecryption=True)
+    return response['Parameter']['Value']
+
+
+def generate_text(heading: str, text: str) -> str:
+    return f"""
+    {heading}\r\n
+    {text}\n
+    This email was sent by the Secure Contact application
+    """
+
+
+def generate_html(heading: str, text: str) -> str:
+    return f"""<html>
+    <head></head>
+    <body>
+    <h1>{heading}</h1>
+    <p>{text}</p>
+    <p>This email was sent by the Secure Contact application <a href='https://aws.amazon.com/ses/'>AWS SES</a></p>
+    </body>
+    </html>"""
+
+
+def create_message(heading: str, text: str):
+    body_html = generate_html(heading, text)
+    body_text = generate_text(heading, text)
+    return {
+        'Body': {
+            'Html': {
+                'Charset': CHARSET,
+                'Data': body_html,
+            },
+            'Text': {
+                'Charset': CHARSET,
+                'Data': body_text,
+            },
+        },
+        'Subject': {
+            'Charset': CHARSET,
+            'Data': '[ALERT P1] SecureDrop Site Failing Healthcheck',
+        },
+    }
+
+
+def send_email(client):
+    email_message = create_message('SecureDrop Status Update', 'Please update the page!')
+    sender = f'Sender Name <{fetch_parameter(client, "prodmon-sender")}>'
+    recipient = fetch_parameter(client, "prodmon-recipient")
+    try:
+        response = client.send_email(
+            Destination={
+                'ToAddresses': [
+                    recipient,
+                ],
+            },
+            Message=email_message,
+            Source=sender,
+        )
+    # Display an error if something goes wrong.
+    except ClientError as e:
+        print(e.response['Error']['Message'])
+    else:
+        print("Email sent! Message ID:"),
+        print(response['MessageId'])
 
 
 # N.B. this script requires Tor to be running on the server
