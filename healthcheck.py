@@ -59,12 +59,14 @@ def create_message(heading: str, text: str):
     }
 
 
-def send_email(client):
+def send_email(session: Session):
+    ssm_client = session.client('ssm')
+    ses_client = session.client('ses')
     email_message = create_message('SecureDrop Status Update', 'Please update the page!')
-    sender = f'Sender Name <{fetch_parameter(client, "prodmon-sender")}>'
-    recipient = fetch_parameter(client, "prodmon-recipient")
+    sender = f'Sender Name <{fetch_parameter(ssm_client, "prodmon-sender")}>'
+    recipient = fetch_parameter(ssm_client, "prodmon-recipient")
     try:
-        response = client.send_email(
+        response = ses_client.send_email(
             Destination={
                 'ToAddresses': [
                     recipient,
@@ -82,7 +84,10 @@ def send_email(client):
 
 
 # N.B. this script requires Tor to be running on the server
-def send_request() -> Optional[requests.Response]:
+def send_request(session: Session) -> Optional[requests.Response]:
+    client = session.client('ssm')
+    target = f'http://{fetch_parameter(client, "securedrop-url")}'
+
     # TODO: handle any ConnectionRefusedError and ConnectTimeoutError
     headers = {
         'User-agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0',
@@ -93,7 +98,7 @@ def send_request() -> Optional[requests.Response]:
         'https': 'socks5h://127.0.0.1:9050'
     }
     try:
-        return requests.get('http://33y6fjyhs3phzfjj.onion', headers=headers, proxies=proxies, timeout=10)
+        return requests.get(target, headers=headers, proxies=proxies, timeout=10)
     except RequestException as err:
         print(err)
 
@@ -108,17 +113,18 @@ def passes_healthcheck(response: Optional[requests.Response]) -> bool:
 
 
 def main():
+    session = create_session()
     attempts = 0
     while attempts < 5:
         attempts += 1
-        response = send_request()
+        response = send_request(session)
         if passes_healthcheck(response):
             break
-        print(f'unable to reach site on attempt {attempts}')
+        print(f'Healthcheck: unable to reach site on attempt {attempts}')
         time.sleep(60)
     else:
-        # TODO: Send an email via SNS
-        pass
+        send_email(session)
+        print('Healthcheck: failed healthcheck')
 
 
 if __name__ == '__main__':
