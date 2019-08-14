@@ -1,22 +1,25 @@
-import requests, logging, time
+import time
+from typing import Optional, Union, Dict
 
+import requests
 from boto3 import Session
 from botocore.exceptions import ClientError
 from requests.exceptions import RequestException
 
-from typing import Optional
-
-
 CHARSET = "UTF-8"
 
 
-def create_session(profile=None) -> Session:
-    return Session(profile_name=profile)
+def create_session(profile=None, region='eu-west-1') -> Session:
+    return Session(profile_name=profile, region_name=region)
 
 
-def fetch_parameter(client, name: str) -> str:
-    response = client.get_parameter(Name=name, WithDecryption=True)
-    return response['Parameter']['Value']
+def fetch_parameter(client, name: str) -> Union[str, None]:
+    try:
+        response = client.get_parameter(Name=name, WithDecryption=True)
+        return response['Parameter']['Value']
+    except client.exceptions.ParameterNotFound:
+        print(f'parameter not found: {name}')
+        return None
 
 
 def generate_text(heading: str, text: str) -> str:
@@ -59,10 +62,9 @@ def create_message(heading: str, text: str):
     }
 
 
-def send_email(session: Session):
+def send_email(session: Session, message: Dict):
     ssm_client = session.client('ssm')
     ses_client = session.client('ses')
-    email_message = create_message('SecureDrop Status Update', 'Please update the page!')
     sender = f'Sender Name <{fetch_parameter(ssm_client, "prodmon-sender")}>'
     recipient = fetch_parameter(ssm_client, "prodmon-recipient")
     try:
@@ -72,7 +74,7 @@ def send_email(session: Session):
                     recipient,
                 ],
             },
-            Message=email_message,
+            Message=message,
             Source=sender,
         )
     # Display an error if something goes wrong.
@@ -103,7 +105,7 @@ def send_request(session: Session) -> Optional[requests.Response]:
         print(err)
 
 
-def passes_healthcheck(response: Optional[requests.Response]) -> bool:
+def healthcheck(response: Optional[requests.Response]) -> bool:
     expected_text = 'SecureDrop | Protecting Journalists and Sources'
     if response:
         print(f'response status code: {response.status_code}')
@@ -112,20 +114,39 @@ def passes_healthcheck(response: Optional[requests.Response]) -> bool:
     return False
 
 
-def main():
-    session = create_session()
+def update_website_configuration(session: Session, bucket_name: str, passes_healthcheck: bool):
+    suffix = 'index.html' if passes_healthcheck else 'maintenance.html'
+    configuration = {
+        'ErrorDocument': {'Key': 'error.html'},
+        'IndexDocument': {'Suffix': suffix},
+    }
+    s3_client = session.client('s3')
+    s3_client.put_bucket_website(Bucket=bucket_name, WebsiteConfiguration=configuration)
+
+
+def run(session: Session, bucket_name: str):
     attempts = 0
     while attempts < 5:
         attempts += 1
         response = send_request(session)
-        if passes_healthcheck(response):
+        if healthcheck(response):
+            update_website_configuration(session, bucket_name, passes_healthcheck=True)
             break
         print(f'Healthcheck: unable to reach site on attempt {attempts}')
         time.sleep(60)
     else:
-        send_email(session)
+        email_message = create_message('SecureDrop Status Update', 'Please update the page!')
+        send_email(session, email_message)
+        update_website_configuration(session, bucket_name, passes_healthcheck=False)
         print('Healthcheck: failed healthcheck')
 
 
 if __name__ == '__main__':
-    main()
+    # TODO: get stage from env
+    #   - to see if we need to use a profile
+    #   - to set the stage on the parameter
+    boto3 = create_session()
+    ssm_client = boto3.client('ssm')
+    bucket = fetch_parameter(ssm_client, '')
+    if bucket is not None:
+        run(boto3, bucket)
