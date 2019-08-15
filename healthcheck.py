@@ -1,7 +1,7 @@
 import time
 import os
 import json
-from typing import Optional, Union, Dict, List
+from typing import Optional, Union, Dict
 
 import requests
 from boto3 import Session
@@ -88,25 +88,36 @@ def send_email(session: Session, message: Dict):
         print(response['MessageId'])
 
 
-def send_message(session: Session):
-    ssm_client = session.client('ssm')
-    url = fetch_parameter(ssm_client, "prodmon-webhook")
+def generate_card(title: str, subtitle: str) -> Dict:
+    return {
+        "cards": [
+            {
+                "header": {
+                    "title": title,
+                    "subtitle": subtitle
+                }
+            }
+        ]
+    }
+
+
+def send_message(config: Dict, passed: bool):
     headers = {'Content-Type': 'application/json; charset=UTF-8'}
-    message = json.dumps({'text': 'HelloWorld!'})
+
+    status = 'Status: 💚💚💚' if passed else 'Status: 💔💔💔'
+    card = json.dumps(generate_card('SecureDrop Monitor', status))
 
     try:
-        response = requests.post(url=url, headers=headers, data=message)
+        response = requests.post(url=config['PRODMON_WEBHOOK'], headers=headers, data=card)
         print(f'Got {response.status_code} from chat.googleapis.com')
     except RequestException as err:
         print(err)
 
 
 # N.B. this script requires Tor to be running on the server
-def send_request(session: Session) -> Optional[requests.Response]:
-    client = session.client('ssm')
-    target = f'http://{fetch_parameter(client, "securedrop-url")}'
-
+def send_request(onion_address: str) -> Optional[requests.Response]:
     # TODO: handle any ConnectionRefusedError and ConnectTimeoutError
+    target = f'http://{onion_address}'
     headers = {
         'User-agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0',
         'referer': 'https://www.google.com'
@@ -131,6 +142,7 @@ def healthcheck(response: Optional[requests.Response]) -> bool:
 
 
 def update_website_configuration(session: Session, bucket_name: str, passes_healthcheck: bool):
+    # TODO: this should return AWS status code so we know if the update succeeded or failed
     suffix = 'index.html' if passes_healthcheck else 'maintenance.html'
     configuration = {
         'ErrorDocument': {'Key': 'error.html'},
@@ -140,34 +152,39 @@ def update_website_configuration(session: Session, bucket_name: str, passes_heal
     s3_client.put_bucket_website(Bucket=bucket_name, WebsiteConfiguration=configuration)
 
 
-def run(session: Session, bucket_name: str):
+def run(session: Session, config: Dict[str, str]):
     attempts = 0
     while attempts < 5:
         attempts += 1
-        response = send_request(session)
+        response = send_request(config['SECUREDROP_URL'])
         if healthcheck(response):
             print(f'Healthcheck: passed on attempt {attempts}')
-            update_website_configuration(session, bucket_name, passes_healthcheck=True)
+            update_website_configuration(session, config['BUCKET_NAME'], passes_healthcheck=True)
+            send_message(config, passed=True)
             break
         print(f'Healthcheck: unable to reach site on attempt {attempts}')
         time.sleep(60)
     else:
         email_message = create_message('SecureDrop Status Update', 'Please update the page!')
         send_email(session, email_message)
-        update_website_configuration(session, bucket_name, passes_healthcheck=False)
+        send_message(config, passed=False)
+        update_website_configuration(session, config['BUCKET_NAME'], passes_healthcheck=False)
         print('Healthcheck: failed healthcheck')
-    # message the alerts channel either way to let us know the current status
-    send_message(session)
 
 
 if __name__ == '__main__':
-    stage = os.getenv('STAGE') if os.getenv('STAGE') else 'DEV'
-    aws_profile = os.getenv('AWS_PROFILE') if os.getenv('AWS_PROFILE') else None
-    print(f'Configuration set for stage={stage} and profile={aws_profile}')
+    STAGE = os.getenv('STAGE') if os.getenv('STAGE') else 'DEV'
+    AWS_PROFILE = os.getenv('AWS_PROFILE') if os.getenv('AWS_PROFILE') else None
+    print(f'Configuration set for stage={STAGE} and profile={AWS_PROFILE}')
 
-    boto3 = create_session(profile=aws_profile)
-    client = boto3.client('ssm')
-    bucket = fetch_parameter(client, f'securedrop-public-bucket-{stage}')
+    SESSION = create_session(profile=AWS_PROFILE)
+    SSM_CLIENT = SESSION.client('ssm')
 
-    if bucket is not None:
-        run(boto3, bucket)
+    CONFIG = {
+        'BUCKET_NAME': fetch_parameter(SSM_CLIENT, f'securedrop-public-bucket-{STAGE}'),
+        'PRODMON_WEBHOOK': fetch_parameter(SSM_CLIENT, "prodmon-webhook"),
+        'SECUREDROP_URL': fetch_parameter(SSM_CLIENT, "securedrop-url")
+    }
+
+    if CONFIG['BUCKET_NAME'] is not None:
+        run(SESSION, CONFIG)
