@@ -1,6 +1,7 @@
 import time
 import os
-from typing import Optional, Union, Dict
+import json
+from typing import Optional, Union, Dict, List
 
 import requests
 from boto3 import Session
@@ -83,8 +84,21 @@ def send_email(session: Session, message: Dict):
     except ClientError as e:
         print(e.response['Error']['Message'])
     else:
-        print("Email sent! Message ID:"),
+        print('Email sent! Message ID:')
         print(response['MessageId'])
+
+
+def send_message(session: Session):
+    ssm_client = session.client('ssm')
+    url = fetch_parameter(ssm_client, "prodmon-webhook")
+    headers = {'Content-Type': 'application/json; charset=UTF-8'}
+    message = json.dumps({'text': 'HelloWorld!'})
+
+    try:
+        response = requests.post(url=url, headers=headers, data=message)
+        print(f'Got {response.status_code} from chat.googleapis.com')
+    except RequestException as err:
+        print(err)
 
 
 # N.B. this script requires Tor to be running on the server
@@ -142,6 +156,8 @@ def run(session: Session, bucket_name: str):
         send_email(session, email_message)
         update_website_configuration(session, bucket_name, passes_healthcheck=False)
         print('Healthcheck: failed healthcheck')
+    # message the alerts channel either way to let us know the current status
+    send_message(session)
 
 
 if __name__ == '__main__':
@@ -150,8 +166,8 @@ if __name__ == '__main__':
     print(f'Configuration set for stage={stage} and profile={aws_profile}')
 
     boto3 = create_session(profile=aws_profile)
-    ssm_client = boto3.client('ssm')
-    bucket = fetch_parameter(ssm_client, f'securedrop-public-bucket-{stage}')
+    client = boto3.client('ssm')
+    bucket = fetch_parameter(client, f'securedrop-public-bucket-{stage}')
 
     if bucket is not None:
         run(boto3, bucket)
