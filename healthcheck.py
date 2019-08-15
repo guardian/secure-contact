@@ -1,4 +1,5 @@
 import time
+import os
 from typing import Optional, Union, Dict
 
 import requests
@@ -6,6 +7,7 @@ from boto3 import Session
 from botocore.exceptions import ClientError
 from requests.exceptions import RequestException
 
+METADATA_SERVICE = "http://169.254.169.254/latest/meta-data/"
 CHARSET = "UTF-8"
 
 
@@ -130,6 +132,7 @@ def run(session: Session, bucket_name: str):
         attempts += 1
         response = send_request(session)
         if healthcheck(response):
+            print(f'Healthcheck: passed on attempt {attempts}')
             update_website_configuration(session, bucket_name, passes_healthcheck=True)
             break
         print(f'Healthcheck: unable to reach site on attempt {attempts}')
@@ -142,11 +145,13 @@ def run(session: Session, bucket_name: str):
 
 
 if __name__ == '__main__':
-    # TODO: get stage from env
-    #   - to see if we need to use a profile
-    #   - to set the stage on the parameter
-    boto3 = create_session()
+    stage = os.getenv('STAGE') if os.getenv('STAGE') else 'DEV'
+    aws_profile = os.getenv('AWS_PROFILE') if os.getenv('AWS_PROFILE') else None
+    print(f'Configuration set for stage={stage} and profile={aws_profile}')
+
+    boto3 = create_session(profile=aws_profile)
     ssm_client = boto3.client('ssm')
-    bucket = fetch_parameter(ssm_client, '')
+    bucket = fetch_parameter(ssm_client, f'securedrop-public-bucket-{stage}')
+
     if bucket is not None:
         run(boto3, bucket)
