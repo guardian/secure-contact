@@ -39,7 +39,7 @@ def generate_html(heading: str, text: str) -> str:
     <body>
     <h1>{heading}</h1>
     <p>{text}</p>
-    <p>This email was sent by the Secure Contact application <a href='https://aws.amazon.com/ses/'>AWS SES</a></p>
+    <p>This email was sent by the Secure Contact application using <a href='https://aws.amazon.com/ses/'>AWS SES</a></p>
     </body>
     </html>"""
 
@@ -68,7 +68,7 @@ def create_message(heading: str, text: str):
 def send_email(session: Session, message: Dict):
     ssm_client = session.client('ssm')
     ses_client = session.client('ses')
-    sender = f'Sender Name <{fetch_parameter(ssm_client, "prodmon-sender")}>'
+    sender = f'SecureDrop Monitor <{fetch_parameter(ssm_client, "prodmon-sender")}>'
     recipient = fetch_parameter(ssm_client, "prodmon-recipient")
     try:
         response = ses_client.send_email(
@@ -101,7 +101,7 @@ def generate_card(title: str, subtitle: str) -> Dict:
     }
 
 
-def send_message(config: Dict, passed: bool):
+def send_message(config: Dict[str, str], passed: bool):
     headers = {'Content-Type': 'application/json; charset=UTF-8'}
 
     status = 'Status: 💚💚💚' if passed else 'Status: 💔💔💔'
@@ -109,7 +109,8 @@ def send_message(config: Dict, passed: bool):
 
     try:
         response = requests.post(url=config['PRODMON_WEBHOOK'], headers=headers, data=card)
-        print(f'Got {response.status_code} from chat.googleapis.com')
+        print(f'Message sent to Hangouts Chat!')
+        print(f'Status code {response.status_code} returned from chat.googleapis.com')
     except RequestException as err:
         print(err)
 
@@ -152,6 +153,15 @@ def update_website_configuration(session: Session, bucket_name: str, passes_heal
     s3_client.put_bucket_website(Bucket=bucket_name, WebsiteConfiguration=configuration)
 
 
+def perform_failure_actions(session: Session, config: Dict[str, str]):
+    message = ("Monitor will attempt to update the page content. \n"
+               "Please check that the update has been appplied.")
+    email_message = create_message('SecureDrop Status Update', message)
+    send_email(session, email_message)
+    send_message(config, passed=False)
+    update_website_configuration(session, config['BUCKET_NAME'], passes_healthcheck=False)
+
+
 def run(session: Session, config: Dict[str, str]):
     attempts = 0
     while attempts < 5:
@@ -165,10 +175,7 @@ def run(session: Session, config: Dict[str, str]):
         print(f'Healthcheck: unable to reach site on attempt {attempts}')
         time.sleep(60)
     else:
-        email_message = create_message('SecureDrop Status Update', 'Please update the page!')
-        send_email(session, email_message)
-        send_message(config, passed=False)
-        update_website_configuration(session, config['BUCKET_NAME'], passes_healthcheck=False)
+        perform_failure_actions(session, config)
         print('Healthcheck: failed healthcheck')
 
 
