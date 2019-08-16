@@ -65,11 +65,10 @@ def create_message(heading: str, text: str):
     }
 
 
-def send_email(session: Session, message: Dict):
-    ssm_client = session.client('ssm')
+def send_email(session: Session, config: Dict[str, str], message: Dict):
     ses_client = session.client('ses')
-    sender = f'SecureDrop Monitor <{fetch_parameter(ssm_client, "prodmon-sender")}>'
-    recipient = fetch_parameter(ssm_client, "prodmon-recipient")
+    sender = config['PRODMON_SENDER']
+    recipient = config['PRODMON_RECIPIENT']
     try:
         response = ses_client.send_email(
             Destination={
@@ -78,7 +77,7 @@ def send_email(session: Session, message: Dict):
                 ],
             },
             Message=message,
-            Source=sender,
+            Source=f'SecureDrop Monitor <{sender}>',
         )
     # Display an error if something goes wrong.
     except ClientError as e:
@@ -188,8 +187,10 @@ if __name__ == '__main__':
     SSM_CLIENT = SESSION.client('ssm')
 
     CONFIG = {
-        'BUCKET_NAME': fetch_parameter(SSM_CLIENT, f'securedrop-public-bucket-{STAGE}'),
-        'PRODMON_WEBHOOK': fetch_parameter(SSM_CLIENT, "prodmon-webhook"),
+        'BUCKET_NAME': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/securedrop-public-bucket'),
+        'PRODMON_WEBHOOK': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-webhook'),
+        'PRODMON_SENDER': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-sender'),
+        'PRODMON_RECIPIENT': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-recipient'),
         'SECUREDROP_URL': fetch_parameter(SSM_CLIENT, "securedrop-url")
     }
 
