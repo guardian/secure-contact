@@ -1,37 +1,61 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Run the SecureContact service in AWS
+Description: Run the SecureContact Monitor in AWS
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: Security
+      Parameters:
+      - SSHAccessCidr
+      - KeyName
+    - Label:
+        default: Networking
+      Parameters:
+      - VpcId
+      - PublicVpcSubnets
+      - PrivateVpcSubnets
+    - Label:
+        default: AWS Configuration
+      Parameters:
+      - AMI
+      - App
+      - Stack
+      - Stage
+      - PublicBucket
 
 Parameters:
-  VpcId:
-    Description: The VPC in which SecureContact will run
-    Type: AWS::EC2::VPC::Id
+  KeyName:
+    Description: An ssh keypair to put on the instance
+    Type: AWS::EC2::KeyPair::KeyName
 
-  AMI:
-    Description: Base AMI for SecureContact instances
-    Type: AWS::EC2::Image::Id
-
-  AccessRestrictionCidr:
+  SSHAccessCidr:
     Description: A CIDR from which access to the instance is allowed
     AllowedPattern: ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}$
     ConstraintDescription: Parameter should be a CIDR block e.g. "1.2.3.4/32"
     Type: String
 
-  KeyName:
-    Description: An ssh keypair to put on the instance
-    Type: AWS::EC2::KeyPair::KeyName
+  VpcId:
+    Description: ID of the VPC onto which to launch the stack
+    Type: AWS::EC2::VPC::Id
+  PublicVpcSubnets:
+    Description: Subnets to use in VPC for public ELB
+    Type: List<AWS::EC2::Subnet::Id>
+  PrivateVpcSubnets:
+    Description: Subnets to use in VPC for instances
+    Type: List<AWS::EC2::Subnet::Id>
 
-  ArtifactBucket:
-    Description: Name of the S3 bucket where the artifact is located
+  AMI:
+    Description: Base AMI for SecureContact instances
+    Type: AWS::EC2::Image::Id
+  App:
+    Description: Application name
     Type: String
-
-  DataBucketName:
-    Description: Name to use for the private S3 bucket where we upload data
+    Default: secure-contact
+  Stack:
+    Description: Application stack
     Type: String
-
-  PublicBucketName:
-    Description: Name to use for the public S3 bucket that will serve content
-    Type: String
-
+    Default: secure-contact
   Stage:
     Description: Application stage
     Type: String
@@ -39,93 +63,68 @@ Parameters:
     - PROD
     - CODE
     - DEV
-
-Mappings:
-  Constants:
-    App:
-      Value: secure-contact
-    Stack:
-      Value: infosec
-
-Resources:
-  DataBucket:
-    Type: AWS::S3::Bucket
-    DeletionPolicy: Retain
-    Properties:
-      AccessControl: Private
-      BucketName: !Ref DataBucketName
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-      Tags:
-      - Key: App
-        Value:
-          Fn::FindInMap: [ Constants, App, Value ]
-      - Key: Stack
-        Value:
-          Fn::FindInMap: [ Constants, Stack, Value ]
-      - Key: Stage
-        Value: !Ref Stage
-
-  DataBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket:
-        Ref: DataBucket
-      PolicyDocument: 
-        Statement: 
-        - Action:
-          - s3:ListBucket
-          - s3:GetObject
-          Effect: Allow
-          Resource:
-            - !Sub arn:aws:s3:::${DataBucket}
-            - !Sub arn:aws:s3:::${DataBucket}/*
-          Principal:
-            AWS: 
-            - !Ref AWS::AccountId
+    Default: PROD
 
   PublicBucket:
-    Type: AWS::S3::Bucket
-    DeletionPolicy: Delete
+    Description: Name of the public S3 bucket that hosts the website
+    Type: String
+
+Resources:
+
+# ----------------------- #
+#  COMMON PARAMETERS      #
+# ----------------------- #
+
+  SecureDropBucketParameter:
+    Type: AWS::SSM::Parameter
     Properties:
-      AccessControl: PublicRead
-      BucketName: !Ref PublicBucketName
-      LifecycleConfiguration:
-        Rules:
-          - ExpirationInDays: 28
-            Status: Enabled
-      WebsiteConfiguration:
-        IndexDocument: index.html
-        ErrorDocument: 404.html
+      Description: S3 bucket that holds the site content
+      Name: !Sub /${Stack}/${Stage}/securedrop-public-bucket
+      Type: String
+      Value: !Ref PublicBucket
+
+# ----------------------- #
+#  LOADBALANCER           #
+# ----------------------- #
+
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Secure Contact Security Group
+      VpcId:
+        Ref: VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 433
+          ToPort: 433
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
       Tags:
         - Key: App
-          Value:
-            Fn::FindInMap: [ Constants, App, Value ]
+          Value: !Ref App
         - Key: Stack
-          Value:
-            Fn::FindInMap: [ Constants, Stack, Value ]
+          Value: !Ref Stack
         - Key: Stage
           Value: !Ref Stage
 
-  PublicBucketPolicy:
-    Type: AWS::S3::BucketPolicy
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
-      Bucket:
-        Ref: PublicBucket
-      PolicyDocument:
-        Statement:
-        - Action:
-          - s3:GetObject
-          Effect: Allow
-          Resource:
-            - !Sub arn:aws:s3:::${PublicBucket}/*
-          Principal: "*"
-          Condition:
-            IpAddress:
-              aws:SourceIp: !Ref AccessRestrictionCidr
+      Listeners:
+      - LoadBalancerPort: 80
+        InstancePort: 80
+        Protocol: HTTP
+      Subnets:
+        Ref: PublicVpcSubnets
+      SecurityGroups:
+      - Ref: LoadBalancerSecurityGroup
+
+# ----------------------- #
+#  APPLICATION SERVER     #
+# ----------------------- #
 
   SecureContactInstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -146,34 +145,56 @@ Resources:
           Action:
           - sts:AssumeRole
       Path: /
-      Policies:
-        - PolicyName: secure-contact-instance-policy
-          PolicyDocument:
-            Statement:
-              # grant access to the S3 bucket that will hold the website contents
-              - Effect: Allow
-                Resource: !Sub arn:aws:s3:::${PublicBucketName}
-                Action:
-                  - s3:ListBucket
-              - Effect: Allow
-                Resource: !Sub arn:aws:s3:::${PublicBucketName}/*
-                Action:
-                  - s3:PutObject
-                  - s3:DeleteObject
 
-  SecureContactBucketPolicy:
+  # Minimal policy to run commands via ssm and use ssm-scala
+  SSMRunCommandPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: secure-contact-bucket-policy
+      PolicyName: ssm-run-command
       PolicyDocument:
         Statement:
         - Effect: Allow
-          Resource:
-          - !Sub arn:aws:s3:::${DataBucket}
-          - !Sub arn:aws:s3:::${DataBucket}/*
+          Resource: "*"
           Action:
-          - s3:ListBucket
-          - s3:GetObject
+          - ec2messages:AcknowledgeMessage
+          - ec2messages:DeleteMessage
+          - ec2messages:FailMessage
+          - ec2messages:GetEndpoint
+          - ec2messages:GetMessages
+          - ec2messages:SendReply
+          - ssm:UpdateInstanceInformation
+          - ssm:ListInstanceAssociations
+          - ssm:DescribeInstanceProperties
+          - ssm:DescribeDocumentParameters
+      Roles:
+      - !Ref SecureContactInstanceRole
+
+  # Describe instance tags, to find out its own stack, app, stage
+  DescribeTagsPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: describe-tags-policy
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Resource: "*"
+          Action:
+          - ec2:DescribeTags
+          - ec2:DescribeRegions
+      Roles:
+      - !Ref SecureContactInstanceRole
+
+  # Allow monitor service to update the public website configuration
+  PutBucketWebsitePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: put-bucket-website-policy
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Resource: !Sub arn:aws:s3:::${PublicBucket}
+          Action:
+          - S3:PutBucketWebsite
       Roles:
       - !Ref SecureContactInstanceRole
 
@@ -184,32 +205,38 @@ Resources:
       VpcId:
         Ref: VpcId
       SecurityGroupIngress:
+      # allow ELB to talk to instance
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        SourceSecurityGroupId:
+          Ref: LoadBalancerSecurityGroup
+      # allow SSH access to specified IP range
       - IpProtocol: tcp
         FromPort: 22
         ToPort: 22
-        CidrIp:
-          Ref: AccessRestrictionCidr
+        CidrIp: !Ref SSHAccessCidr
       SecurityGroupEgress:
+      # allow instance to make http requests
       - IpProtocol: tcp
-        FromPort: 433
-        ToPort: 433
-        CidrIp:
-          Ref: AccessRestrictionCidr
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: 0.0.0.0/0
       Tags:
-      - Key: App
-        Value:
-          Fn::FindInMap: [ Constants, App, Value ]
-      - Key: Stack
-        Value:
-          Fn::FindInMap: [ Constants, Stack, Value ]
-      - Key: Stage
-        Value: !Ref Stage
+        - Key: App
+          Value: !Ref App
+        - Key: Stack
+          Value: !Ref Stack
+        - Key: Stage
+          Value: !Ref Stage
 
   LaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
-      KeyName:
-        Ref: KeyName
       ImageId:
         Ref: AMI
       SecurityGroups:
@@ -221,21 +248,40 @@ Resources:
       UserData:
         'Fn::Base64': !Sub |
           #!/bin/bash -ev
-          echo ${Stage} > /etc/stage
 
-          # setup secure-contact
           adduser --system --home /secure-contact --disabled-password secure-contact
 
-          aws --region eu-west-1 s3 cp s3://${ArtifactBucket}/secure-contact/${Stage}/secure-contact.json /secure-contact
-          aws --region eu-west-1 s3 cp s3://${ArtifactBucket}/secure-contact/${Stage}/secure-contact.tgz /secure-contact
+          export STAGE="${Stage}"
+          export STACK="${Stack}"
+          export APP="${App}"
+          export REGION="${AWS::Region}"
 
-          # Expand zipped tar file; remove base directory
-          tar -xzf /secure-contact/secure-contact.tgz --strip 1 --directory /secure-contact/
+  AutoscalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        Ref: PrivateVpcSubnets
+      LaunchConfigurationName:
+        Ref: LaunchConfig
+      MinSize: 0
+      MaxSize: 1
+      DesiredCapacity: 1
+      LoadBalancerNames:
+      - Ref: LoadBalancer
+      Tags:
+      - Key: Stage
+        Value:
+          Ref: Stage
+        PropagateAtLaunch: true
+      - Key: Stack
+        Value:
+          Ref: Stack
+        PropagateAtLaunch: true
+      - Key: App
+        Value:
+          Ref: App
+        PropagateAtLaunch: true
 
-          # TODO: this should be done as part of the build and bundle
-          # pip3 install -r requirements.txt
-
-          # Give ownership of all the application files to the application user
-          chown -R secure-contact /secure-contact
-
-          # Start application
+Outputs:
+  LoadBalancerUrl:
+    Value: !GetAtt LoadBalancer.DNSName
