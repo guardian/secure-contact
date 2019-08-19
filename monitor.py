@@ -8,7 +8,6 @@ from boto3 import Session
 from botocore.exceptions import ClientError
 from requests.exceptions import RequestException
 
-METADATA_SERVICE = "http://169.254.169.254/latest/meta-data/"
 CHARSET = "UTF-8"
 
 
