@@ -145,6 +145,29 @@ Resources:
           Action:
           - sts:AssumeRole
       Path: /
+      Policies:
+      - PolicyName: root-policy
+        PolicyDocument:
+          Statement:
+            # fetch parameters according to stage
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:GetParameters
+                - ssm:GetParametersByPath
+              Resource:
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/securedrop-url
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${Stack}/${Stage}/*
+            # send email alerts from validated addresses
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+              Resource: "*"
+            # allow service to update the website configuration
+            - Effect: Allow
+              Resource: !Sub arn:aws:s3:::${PublicBucket}
+              Action:
+                - S3:PutBucketWebsite
 
   # Minimal policy to run commands via ssm and use ssm-scala
   SSMRunCommandPolicy:
@@ -179,22 +202,10 @@ Resources:
         - Effect: Allow
           Resource: "*"
           Action:
-          - ec2:DescribeTags
-          - ec2:DescribeRegions
-      Roles:
-      - !Ref SecureContactInstanceRole
-
-  # Allow monitor service to update the public website configuration
-  PutBucketWebsitePolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: put-bucket-website-policy
-      PolicyDocument:
-        Statement:
-        - Effect: Allow
-          Resource: !Sub arn:aws:s3:::${PublicBucket}
-          Action:
-          - S3:PutBucketWebsite
+            - autoscaling:DescribeAutoScalingInstances
+            - autoscaling:DescribeAutoScalingGroups
+            - ec2:DescribeRegions
+            - ec2:DescribeTags
       Roles:
       - !Ref SecureContactInstanceRole
 
@@ -278,6 +289,10 @@ Resources:
           Ref: Stack
         PropagateAtLaunch: true
       - Key: App
+        Value:
+          Ref: App
+        PropagateAtLaunch: true
+      - Key: Name
         Value:
           Ref: App
         PropagateAtLaunch: true
