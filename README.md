@@ -1,5 +1,10 @@
 # secure-contact
 
+> The pen might not be mightier than the sword, but maybe the printing press was heavier than the siege weapon.  Just a few words can change everything ...
+
+> ~ Terry Pratchett
+
+Scripts for building and running the Guardian's PGP contact and SecureDrop pages
 
 ## Development
 
