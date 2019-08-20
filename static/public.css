@@ -250,7 +250,7 @@ ol {
 
 .circles-list {
     list-style-type: none;
-    margin: 0 0 0 4rem;
+    margin: 2rem 0 0 4rem;
     padding: 0;
     counter-reset: li-counter;
 }
