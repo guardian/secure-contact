@@ -95,8 +95,8 @@ Resources:
         Ref: VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 433
-          ToPort: 433
+          FromPort: 443
+          ToPort: 443
           CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
           FromPort: 80
@@ -262,10 +262,15 @@ Resources:
 
           adduser --system --home /secure-contact --disabled-password secure-contact
 
+        # Get repo and build pages
+
           export STAGE="${Stage}"
           export STACK="${Stack}"
           export APP="${App}"
           export REGION="${AWS::Region}"
+
+        # Start services and application
+          service tor start
 
   AutoscalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
