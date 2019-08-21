@@ -17,7 +17,7 @@ def get_stage(filename: str) -> str:
     if os.path.exists(filename):
         try:
             with open(filename) as fobj:
-                stage = fobj.readline()
+                stage = fobj.readline().strip()
         except IOError:
             print('cannot open', filename)
     return stage
@@ -155,15 +155,8 @@ def healthcheck(response: Optional[requests.Response]) -> bool:
 
 def upload_website_index(session: Session, config: Dict[str, str], passes_healthcheck: bool) -> None:
     file_name = 'build/index.html' if passes_healthcheck else 'build/maintenance.html'
-
     client = session.client('s3')
-    client.upload_file(
-        file_name, config['BUCKET_NAME'], 'index2.html',
-        ExtraArgs={
-            'ContentType': 'text/html',
-            'ACL': 'public-read'
-        }
-    )
+    client.upload_file(file_name, config['BUCKET_NAME'], 'index2.html', ExtraArgs={'ContentType': 'text/html'})
 
 
 # talk to Kate to find out why this solution currently does not work for PROD >_< ...SADNESS
@@ -210,6 +203,8 @@ if __name__ == '__main__':
     SESSION = create_session(profile=AWS_PROFILE)
     SSM_CLIENT = SESSION.client('ssm')
 
+    print(f'Fetching configuration for stage={STAGE} and profile={AWS_PROFILE}')
+
     CONFIG = {
         'BUCKET_NAME': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/securedrop-public-bucket'),
         'PRODMON_WEBHOOK': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-webhook'),
@@ -217,7 +212,6 @@ if __name__ == '__main__':
         'PRODMON_RECIPIENT': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-recipient'),
         'SECUREDROP_URL': fetch_parameter(SSM_CLIENT, "securedrop-url")
     }
-    print(f'Configuration set for stage={STAGE} and profile={AWS_PROFILE}')
 
     if CONFIG['BUCKET_NAME'] is not None:
         securedrop.build_pages(CONFIG['SECUREDROP_URL'], STAGE)
