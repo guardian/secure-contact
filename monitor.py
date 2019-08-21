@@ -12,6 +12,17 @@ from requests.exceptions import RequestException
 CHARSET = "UTF-8"
 
 
+def get_stage(filename: str) -> str:
+    stage = 'DEV'
+    if os.path.exists(filename):
+        try:
+            with open(filename) as fobj:
+                stage = fobj.readline()
+        except IOError:
+            print('cannot open', filename)
+    return stage
+
+
 def create_session(profile=None, region='eu-west-1') -> Session:
     return Session(profile_name=profile, region_name=region)
 
@@ -194,10 +205,8 @@ def run(session: Session, config: Dict[str, str]):
 
 
 if __name__ == '__main__':
-    STAGE = os.getenv('STAGE') if os.getenv('STAGE') else 'DEV'
+    STAGE = get_stage('/etc/stage')
     AWS_PROFILE = os.getenv('AWS_PROFILE') if os.getenv('AWS_PROFILE') else None
-    print(f'Configuration set for stage={STAGE} and profile={AWS_PROFILE}')
-
     SESSION = create_session(profile=AWS_PROFILE)
     SSM_CLIENT = SESSION.client('ssm')
 
@@ -208,6 +217,7 @@ if __name__ == '__main__':
         'PRODMON_RECIPIENT': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-recipient'),
         'SECUREDROP_URL': fetch_parameter(SSM_CLIENT, "securedrop-url")
     }
+    print(f'Configuration set for stage={STAGE} and profile={AWS_PROFILE}')
 
     if CONFIG['BUCKET_NAME'] is not None:
         securedrop.build_pages(CONFIG['SECUREDROP_URL'], STAGE)
