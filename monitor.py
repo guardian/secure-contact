@@ -1,5 +1,6 @@
 import time
 import os
+import securedrop
 import json
 from typing import Optional, Union, Dict
 
@@ -78,7 +79,7 @@ def send_email(session: Session, config: Dict[str, str], message: Dict):
             Message=message,
             Source=f'SecureDrop Monitor <{sender}>',
         )
-    # Display an error if something goes wrong.
+    # TODO: use logging library instead and send logs somewhere sensible
     except ClientError as e:
         print(e.response['Error']['Message'])
     else:
@@ -100,6 +101,7 @@ def generate_card(title: str, subtitle: str) -> Dict:
 
 
 def send_message(config: Dict[str, str], passed: bool):
+    # TODO: message @all to notify when healthcheck fails
     headers = {'Content-Type': 'application/json; charset=UTF-8'}
 
     status = 'Status: 💚💚💚' if passed else 'Status: 💔💔💔'
@@ -140,6 +142,20 @@ def healthcheck(response: Optional[requests.Response]) -> bool:
     return False
 
 
+def upload_website_index(session: Session, config: Dict[str, str], passes_healthcheck: bool) -> None:
+    file_name = 'build/index.html' if passes_healthcheck else 'build/maintenance.html'
+
+    client = session.client('s3')
+    client.upload_file(
+        file_name, config['BUCKET_NAME'], 'index2.html',
+        ExtraArgs={
+            'ContentType': 'text/html',
+            'ACL': 'public-read'
+        }
+    )
+
+
+# talk to Kate to find out why this solution currently does not work for PROD >_< ...SADNESS
 def update_website_configuration(session: Session, bucket_name: str, passes_healthcheck: bool):
     # TODO: this should return AWS status code so we know if the update succeeded or failed
     suffix = 'index.html' if passes_healthcheck else 'maintenance.html'
@@ -157,7 +173,7 @@ def perform_failure_actions(session: Session, config: Dict[str, str]):
     email_message = create_message('SecureDrop Status Update', message)
     send_email(session, email_message)
     send_message(config, passed=False)
-    update_website_configuration(session, config['BUCKET_NAME'], passes_healthcheck=False)
+    upload_website_index(session, config, passes_healthcheck=False)
 
 
 def run(session: Session, config: Dict[str, str]):
@@ -167,7 +183,7 @@ def run(session: Session, config: Dict[str, str]):
         response = send_request(config['SECUREDROP_URL'])
         if healthcheck(response):
             print(f'Healthcheck: passed on attempt {attempts}')
-            update_website_configuration(session, config['BUCKET_NAME'], passes_healthcheck=True)
+            upload_website_index(session, config, passes_healthcheck=True)
             send_message(config, passed=True)
             break
         print(f'Healthcheck: unable to reach site on attempt {attempts}')
@@ -194,4 +210,5 @@ if __name__ == '__main__':
     }
 
     if CONFIG['BUCKET_NAME'] is not None:
+        securedrop.build_pages(CONFIG['SECUREDROP_URL'], STAGE)
         run(SESSION, CONFIG)
