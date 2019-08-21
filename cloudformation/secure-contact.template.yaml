@@ -165,7 +165,9 @@ Resources:
               Resource: "*"
             # allow service to update the website configuration
             - Effect: Allow
-              Resource: !Sub arn:aws:s3:::${PublicBucket}
+              Resource:
+                - !Sub arn:aws:s3:::${PublicBucket}
+                - !Sub arn:aws:s3:::${PublicBucket}/*
               Action:
                 - S3:PutBucketWebsite
                 - S3:PutObject
@@ -261,17 +263,20 @@ Resources:
         'Fn::Base64': !Sub |
           #!/bin/bash -ev
 
-          adduser --system --home /secure-contact --disabled-password secure-contact
+          echo ${Stage} > /etc/stage
 
-        # Get repo and build pages
+          adduser --home /secure-contact --disabled-password secure-contact
 
-          export STAGE="${Stage}"
-          export STACK="${Stack}"
-          export APP="${App}"
-          export REGION="${AWS::Region}"
+          git clone https://github.com/guardian/secure-contact /secure-contact
+          pip3 install -r /secure-contact/requirements.txt
 
-        # Start services and application
+          touch /secure-contact/cron-lastrun.log
+          echo '00 * * * *python3 /secure-contact/monitor.py > /secure-contact/cron-lastrun.log 2>&1' | crontab -u secure-contact -
+
+          chown -R secure-contact /secure-contact
+
           service tor start
+
 
   AutoscalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
