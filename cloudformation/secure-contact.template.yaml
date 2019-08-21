@@ -168,6 +168,7 @@ Resources:
               Resource: !Sub arn:aws:s3:::${PublicBucket}
               Action:
                 - S3:PutBucketWebsite
+                - S3:PutObject
 
   # Minimal policy to run commands via ssm and use ssm-scala
   SSMRunCommandPolicy:
