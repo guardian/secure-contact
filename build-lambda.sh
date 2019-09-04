@@ -2,8 +2,8 @@
 
 set -ev
 
-APP=secure-contact
-PROJECT=InfoSec::infosec-$APP
+APP=secure-contact-lambda
+PROJECT=InfoSec::$APP
 
 if [[ -z $BUILD_NUMBER ]]; then
   BUILD_NUMBER=0
