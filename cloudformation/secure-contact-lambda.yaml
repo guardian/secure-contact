@@ -189,7 +189,7 @@ Resources:
         CheckStatusEvent:
           Type: Schedule
           Properties:
-            Schedule: rate(1 day) 
+            Schedule: cron(0 11 ? * MON-FRI *)
       Tags:
         Stack: !Ref Stack
         Stage: !Ref Stage
