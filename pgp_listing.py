@@ -2,6 +2,7 @@ import os
 import shutil
 import json
 import pgp_manager
+import re
 
 from pgp_manager import Entry
 from jinja2 import Environment, FileSystemLoader, select_autoescape, Markup
@@ -41,7 +42,9 @@ class EnhancedEntry:
         if not isinstance(other, EnhancedEntry):
             return NotImplemented
 
-        return self.other_names == other.other_names and self.last_name == other.last_name and self.publickey == other.publickey and self.fingerprint == other.fingerprint and self.email == other.email
+        return self.other_names == other.other_names and self.last_name == other.last_name \
+            and self.publickey == other.publickey and self.fingerprint == other.fingerprint \
+            and self.email == other.email
 
     def __hash__(self):
         # Make class instances usable as items in hashable collections
@@ -54,6 +57,12 @@ def parse_fingerprint(raw_fingerprint: Union[None, str]) -> str:
         split_str = raw_fingerprint.split('Key fingerprint = ', 1)
         if len(split_str) > 1:
             return split_str[1][:50]
+        else:
+            pattern = re.compile(r'([A-Z0-9]{4}\s{1,2}){9}[A-Z0-9]{4}')
+            match = re.search(pattern, raw_fingerprint)
+            print(f'match = {match}')
+            if match:
+                return match.group()
     return ''
 
 
@@ -141,17 +150,14 @@ def lambda_handler(event, context) -> None:
 
 
 if __name__ == '__main__':
+    STAGE = os.getenv('STAGE') if os.getenv('STAGE') else 'DEV'
+    config_path = os.path.expanduser('~/.gu/secure-contact.json')
+    config = json.load(open(config_path))
 
-    if os.getenv('STAGE'):
-        DATA_BUCKET_NAME = os.getenv('DATA_BUCKET_NAME')
-        PUBLIC_BUCKET_NAME = os.getenv('PUBLIC_BUCKET_NAME')
-        AWS_PROFILE = os.getenv('AWS_PROFILE')
-    else:
-        config_path = os.path.expanduser('~/.gu/secure-contact.json')
-        config = json.load(open(config_path))
-        DATA_BUCKET_NAME = config['DATA_BUCKET_NAME']
-        PUBLIC_BUCKET_NAME = config['PUBLIC_BUCKET_NAME']
-        AWS_PROFILE = config['AWS_PROFILE']
+    AWS_PROFILE = config['AWS_PROFILE']
+    DATA_BUCKET_NAME = config['DATA_BUCKET_NAME']
+
+    print(f'Using configuration for stage={STAGE} and profile={AWS_PROFILE}')
 
     session = pgp_manager.create_session(AWS_PROFILE)
     entries = pgp_manager.get_all_entries(session, DATA_BUCKET_NAME)
