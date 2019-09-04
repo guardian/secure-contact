@@ -27,7 +27,7 @@ Parameters:
   App:
     Description: Application name
     Type: String
-    Default: secure-contact
+    Default: secure-contact-lambda
 
   Stack:
     Description: Application stack
@@ -84,7 +84,7 @@ Resources:
 
   PublicBucket:
     Type: AWS::S3::Bucket
-    DeletionPolicy: Delete
+    DeletionPolicy: Retain
     Properties:
       AccessControl: PublicRead
       BucketName: !Ref PublicBucketName
@@ -175,7 +175,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       CodeUri: 
         Bucket: !Ref ArtifactBucket
-        Key: !Sub ${Stack}/${Stage}/${App}/secure-contact.zip
+        Key: !Sub ${Stack}/${Stage}/${App}/secure-contact-lambda.zip
       Runtime: python3.7
       Handler: pgp_listing.lambda_handler
       Environment:
