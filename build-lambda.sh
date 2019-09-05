@@ -64,7 +64,7 @@ function upload() {
 
 upload riff-raff.yaml s3://riffraff-artifact/${PROJECT_NAME}/${BUILD_NUMBER}/riff-raff.yaml
 upload cloudformation/${APP}.yaml s3://riffraff-artifact/${PROJECT_NAME}/${BUILD_NUMBER}/cloudformation/${APP}.yaml
-upload target/lambda/${APP}.zip s3://riffraff-artifact/${PROJECT_NAME}/${BUILD_NUMBER}/
+upload target/lambda/${APP}.zip s3://riffraff-artifact/${PROJECT_NAME}/${BUILD_NUMBER}/lambda/
 # upload build.json last to avoid any potential race conditions
 upload build.json s3://riffraff-builds/${PROJECT_NAME}/${BUILD_NUMBER}/build.json
 
