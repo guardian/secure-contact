@@ -3,7 +3,9 @@ regions: [eu-west-1]
 
 templates:
   lambda:
+    app: secure-contact
     type: aws-lambda
+    contentDirectory: lambda
     parameters:
       bucket: infosec-dist
       functionNames: [secure-contact-]
