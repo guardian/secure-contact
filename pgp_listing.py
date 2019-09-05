@@ -60,7 +60,6 @@ def parse_fingerprint(raw_fingerprint: Union[None, str]) -> str:
         else:
             pattern = re.compile(r'([A-Z0-9]{4}\s{1,2}){9}[A-Z0-9]{4}')
             match = re.search(pattern, raw_fingerprint)
-            print(f'match = {match}')
             if match:
                 return match.group()
     return ''

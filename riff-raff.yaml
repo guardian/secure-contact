@@ -1,22 +1,22 @@
-stacks: [infosec]
+stacks: [secure-contact]
 regions: [eu-west-1]
 
 templates:
-  secure-contact-lambda:
+  lambda:
     type: aws-lambda
     parameters:
       bucket: infosec-dist
-      functionNames: [secure-contact-lambda-]
+      functionNames: [secure-contact-]
       fileName: secure-contact-lambda.zip
       prefixStack: false
 
 deployments:
-  lambda-upload:
-    template: secure-contact-lambda
+  lambdaUpload:
+    template: lambda
     actions:
     - uploadLambda
 
   lambdaUpdate:
-    template: secure-contact-lambda
+    template: lambda
     actions:
     - updateLambda
