@@ -72,3 +72,14 @@ The following command will run the Python tests:
 ```bash
 python -m unittest discover -s tests
 ```
+
+
+## Deployment
+
+### Monitor service
+
+The Secure Contact Monitor service is an EC2 instance running in AWS. The CloudFormation template can be found in this repository and will also create a load balancer and autoscaling group (ASG).
+
+To release the latest version of master to a stage, login to the AWS console and terminate the currently running instance. Once the ASG healthchecks fail, the ASG will launch a new instance using the launch config in the CloudFormation template.
+
+The status page will remain available during the replacement since the page is served from an S3 bucket. While the new instance is launching it will perform the status check and update the status page in S3.
