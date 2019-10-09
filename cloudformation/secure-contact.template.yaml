@@ -8,27 +8,27 @@ Metadata:
         default: Security
       Parameters:
       - SSHAccessCidr
-      - KeyName
     - Label:
         default: Networking
       Parameters:
       - VpcId
-      - PublicVpcSubnets
-      - PrivateVpcSubnets
+      - LoadBalancerSubnets
+      - InstanceSubnets
     - Label:
         default: AWS Configuration
       Parameters:
       - AMI
-      - App
-      - Stack
       - Stage
       - PublicBucket
 
-Parameters:
-  KeyName:
-    Description: An ssh keypair to put on the instance
-    Type: AWS::EC2::KeyPair::KeyName
+Mappings:
+  Constants:
+    Stack:
+      Value: secure-contact
+    App:
+      Value: monitor
 
+Parameters:
   SSHAccessCidr:
     Description: A CIDR from which access to the instance is allowed
     AllowedPattern: ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}$
@@ -38,24 +38,16 @@ Parameters:
   VpcId:
     Description: ID of the VPC onto which to launch the stack
     Type: AWS::EC2::VPC::Id
-  PublicVpcSubnets:
+  LoadBalancerSubnets:
     Description: Subnets to use in VPC for public ELB
     Type: List<AWS::EC2::Subnet::Id>
-  PrivateVpcSubnets:
+  InstanceSubnets:
     Description: Subnets to use in VPC for instances
     Type: List<AWS::EC2::Subnet::Id>
 
   AMI:
     Description: Base AMI for SecureContact instances
     Type: AWS::EC2::Image::Id
-  App:
-    Description: Application name
-    Type: String
-    Default: secure-contact
-  Stack:
-    Description: Application stack
-    Type: String
-    Default: secure-contact
   Stage:
     Description: Application stage
     Type: String
@@ -79,7 +71,7 @@ Resources:
     Type: AWS::SSM::Parameter
     Properties:
       Description: S3 bucket that holds the site content
-      Name: !Sub /${Stack}/${Stage}/securedrop-public-bucket
+      Name: !Sub /secure-contact/${Stage}/securedrop-public-bucket
       Type: String
       Value: !Ref PublicBucket
 
@@ -97,18 +89,22 @@ Resources:
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
-          CidrIp: 0.0.0.0/0
+          CidrIp: !Ref SSHAccessCidr
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
-          CidrIp: 0.0.0.0/0
+          CidrIp: !Ref SSHAccessCidr
       Tags:
-        - Key: App
-          Value: !Ref App
-        - Key: Stack
-          Value: !Ref Stack
-        - Key: Stage
-          Value: !Ref Stage
+      - Key: Stack
+        Value:
+          Fn::FindInMap: [ Constants, Stack, Value ]
+      - Key: App
+        Value:
+          Fn::FindInMap: [ Constants, App, Value ]
+      - Key: Stage
+        Value: !Ref Stage
+      - Key: Name
+        Value: !Sub ${AWS::StackName} LoadBalancer
 
   LoadBalancer:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
@@ -117,10 +113,27 @@ Resources:
       - LoadBalancerPort: 80
         InstancePort: 80
         Protocol: HTTP
+      HealthCheck:
+        Target: HTTP:80/index.html
+        HealthyThreshold: 2
+        UnhealthyThreshold: 10
+        Interval: 30
+        Timeout: 20
       Subnets:
-        Ref: PublicVpcSubnets
+        Ref: LoadBalancerSubnets
       SecurityGroups:
       - Ref: LoadBalancerSecurityGroup
+      Tags:
+        - Key: Stack
+          Value:
+            Fn::FindInMap: [ Constants, Stack, Value ]
+        - Key: App
+          Value:
+            Fn::FindInMap: [ Constants, App, Value ]
+        - Key: Stage
+          Value: !Ref Stage
+        - Key: Name
+          Value: !Sub ${AWS::StackName}
 
 # ----------------------- #
 #  APPLICATION SERVER     #
@@ -157,7 +170,7 @@ Resources:
                 - ssm:GetParametersByPath
               Resource:
                 - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/securedrop-url
-                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${Stack}/${Stage}/*
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/secure-contact/${Stage}/*
             # send email alerts from validated addresses
             - Effect: Allow
               Action:
@@ -241,12 +254,16 @@ Resources:
         ToPort: 443
         CidrIp: 0.0.0.0/0
       Tags:
-        - Key: App
-          Value: !Ref App
-        - Key: Stack
-          Value: !Ref Stack
-        - Key: Stage
-          Value: !Ref Stage
+      - Key: Stack
+        Value:
+          Fn::FindInMap: [ Constants, Stack, Value ]
+      - Key: App
+        Value:
+          Fn::FindInMap: [ Constants, App, Value ]
+      - Key: Stage
+        Value: !Ref Stage
+      - Key: Name
+        Value: !Sub ${AWS::StackName} Instance
 
   LaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
@@ -265,47 +282,75 @@ Resources:
 
           echo ${Stage} > /etc/stage
 
-          adduser --home /secure-contact --disabled-password secure-contact
-
+          # install application
+          mkdir /secure-contact
+          cd /secure-contact
           git clone https://github.com/guardian/secure-contact /secure-contact
           pip3 install -r /secure-contact/requirements.txt
 
-          touch /secure-contact/cron-lastrun.log
-          echo '00 * * * *python3 /secure-contact/monitor.py > /secure-contact/cron-lastrun.log 2>&1' | crontab -u secure-contact -
-
-          chown -R secure-contact /secure-contact
-
+          # start tor and run monitor
           service tor start
+          python3 /secure-contact/monitor.py
+
+          # fix permissions
+          chown -R www-data /secure-contact/
+
+          # nginx configuration
+          cd /etc/nginx/sites-available/
+          cat <<SECURE_CONTACT_CONF > secure-contact
+          server {
+            listen 80 default_server;
+            listen [::]:80 default_server ipv6only=on;
+
+            root /secure-contact/build;
+            index index.html;
+            add_header Strict-Transport-Security "max-age=15552000";
+
+            location ~ /(data|lib|tmp|tpl)/ {
+              deny all;
+              return 404;
+            }
+          }
+          SECURE_CONTACT_CONF
+          cd /etc/nginx/sites-enabled/
+          ln -s /etc/nginx/sites-available/secure-contact secure-contact
+          rm default
+          service nginx restart
+
+          # schedule monitoring service
+          touch /secure-contact/cron-lastrun.log
+          chown www-data /secure-contact/cron-lastrun.log
+          echo '00 * * * *python3 /secure-contact/monitor.py > /secure-contact/cron-lastrun.log 2>&1' | crontab -u secure-contact -
 
 
   AutoscalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       VPCZoneIdentifier:
-        Ref: PrivateVpcSubnets
+        Ref: InstanceSubnets
       LaunchConfigurationName:
         Ref: LaunchConfig
       MinSize: 0
       MaxSize: 1
       DesiredCapacity: 1
+      HealthCheckType: ELB
+      HealthCheckGracePeriod: 120
       LoadBalancerNames:
       - Ref: LoadBalancer
       Tags:
-      - Key: Stage
+      - Key: App
         Value:
-          Ref: Stage
+          Fn::FindInMap: [ Constants, App, Value ]
         PropagateAtLaunch: true
       - Key: Stack
         Value:
-          Ref: Stack
+          Fn::FindInMap: [ Constants, Stack, Value ]
         PropagateAtLaunch: true
-      - Key: App
-        Value:
-          Ref: App
+      - Key: Stage
+        Value: !Ref Stage
         PropagateAtLaunch: true
       - Key: Name
-        Value:
-          Ref: App
+        Value: !Sub ${AWS::StackName}
         PropagateAtLaunch: true
 
 Outputs:
