@@ -6,6 +6,19 @@
 
 Scripts for building and running the Guardian's PGP contact and SecureDrop pages
 
+## Overview
+
+### Secure Contact Monitor
+
+Secure Contact Monitor (SCM) performs status monitoring of our onion website and updates our status page accordingly.
+
+The monitor script attempts to reach our onion site five times, with a 60 second interval between each attempt. The timeouts and sleep are quite generous, which gives the Tor network the benefit of the doubt.
+
+SCM will send notifications via Hangouts Chat and/or email. The channel it messages is determined by the webhook URL that is stored in AWS parameter store.
+
+Most of the configuration, including the Onion URL, is stored in AWS Parameter Store and fetched each time the script is run.
+
+
 ## Development
 
 This project is using Python 3.
@@ -83,3 +96,13 @@ The Secure Contact Monitor service is an EC2 instance running in AWS. The CloudF
 To release the latest version of master to a stage, login to the AWS console and terminate the currently running instance. Once the ASG healthchecks fail, the ASG will launch a new instance using the launch config in the CloudFormation template.
 
 The status page will remain available during the replacement since the page is served from an S3 bucket. While the new instance is launching it will perform the status check and update the status page in S3.
+
+
+## TODO:
+
+- Store healthcheck history and only send notifications on state change
+- Decrease interval between healthchecks
+- Serve a page displaying health information, including the healthcheck history
+- Create a UI that only allows access to authorised users
+- Add functionality to disable the S3 upload via UI
+- Add toggle to override healthcheck results and force page update to desired state
