@@ -18,12 +18,17 @@ SCM will send notifications via Hangouts Chat and/or email. The channel it messa
 
 Most of the configuration, including the Onion URL, is stored in AWS Parameter Store and fetched each time the script is run.
 
+### Notifications and alerts
 
-## Development
+TODO: document monitor history and how the application uses DynamoDB
+
+## Contributing
+
+### Python and virtualenv
 
 This project is using Python 3.
 
-### 1. Install Python
+#### 1. Install Python
 
 Mac users can use homebrew to install Python 3:
 
@@ -31,7 +36,7 @@ Mac users can use homebrew to install Python 3:
 brew install python3
 ```
 
-### 2. Install and activate virtualenv
+#### 2. Install and activate virtualenv
 
 It is a good idea to use virtualenv with Python, this can be done with Pip:
 
@@ -40,7 +45,6 @@ pip3 install virtualenv
 ```
 
 If you are setting up this project for the first time you will need to create a virtualenv.
-
 From the root directory of the project run:
 
 ```bash
@@ -57,7 +61,7 @@ More details on virtual environments can be found here: https://docs.python-guid
 
 When you are finished with the virtualenv enter `deactivate` in the terminal to return to the default Python interpreter of the system. However, keep the virtualenv running while completing the remaining steps!
 
-### 3. Install packages
+#### 3. Install packages
 
 With your virtualenv active, you should be in the directory where requirements.txt is located.
 
@@ -67,7 +71,28 @@ For installing the required packages run:
 pip3 install -r requirements.txt
 ```
 
-### 4. Start the server
+### Running locally
+
+#### DynamoDB
+
+Secure Contact Monitor uses DynamoDB to persist some information. Therefore to run it locally you will need to make sure you have DynamoDB running. [You can download DynamoDB to run as a local jar from the AWS website](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.DynamoDBLocal.html).
+
+To run DynamoDB for development you can execute the following:
+
+```bash
+java -Djava.library.path=~/etc/DynamoDBLocal_lib -jar ~/etc/DynamoDBLocal.jar -sharedDb -inMemory
+
+```
+
+You'll also need to set up the required tables. The easiest way to do this is to run the script that exists for this purpose.
+
+```bash
+python3 dev/dev_database.py
+```
+
+Since this runs an in-memory version of DynamoDB, you'll need to set the tables up again each time you restart DynamoDB.
+
+#### Dev server
 
 Use the following command to start a server:
 
