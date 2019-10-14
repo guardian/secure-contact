@@ -1,4 +1,6 @@
 import boto3
+import monitor
+
 
 # NB: Only use these for local testing
 # use the provided CloudFormation template to create the table in AWS environments.
@@ -12,22 +14,22 @@ def create_table(db_client, table_name: str):
             TableName=table_name,
             KeySchema=[
                 {
-                    'AttributeName': 'timestamp',
+                    'AttributeName': 'CheckTime',
                     'KeyType': 'HASH'
                 },
                 {
-                    'AttributeName': 'outcome',
+                    'AttributeName': 'Outcome',
                     'KeyType': 'RANGE'
                 }
             ],
             AttributeDefinitions=[
                 {
-                    'AttributeName': 'timestamp',
-                    'AttributeType': 'S'
+                    'AttributeName': 'CheckTime',
+                    'AttributeType': 'N'
                 },
                 {
-                    'AttributeName': 'outcome',
-                    'AttributeType': 'B'
+                    'AttributeName': 'Outcome',
+                    'AttributeType': 'S'
                 }
             ],
             ProvisionedThroughput={
@@ -46,18 +48,32 @@ def update_ttl(db_client, table_name: str):
         db_client.update_time_to_live(
             TableName=table_name,
             TimeToLiveSpecification={
-                'AttributeName': 'TTLTimestamp',
+                'AttributeName': 'ExpirationTime',
                 'Enabled': True
             }
         )
 
 
+# If an item that has the same primary key as the new item already exists in the specified table,
+# the new item completely replaces the existing item.
+def create_records(db_client, table_name: str):
+    db_client.put_item(TableName=table_name, Item=monitor.create_item(1570701600, True))
+    db_client.put_item(TableName=table_name, Item=monitor.create_item(1570705800, True))
+    db_client.put_item(TableName=table_name, Item=monitor.create_item(1570666200, True))
+    db_client.put_item(TableName=table_name, Item=monitor.create_item(1570713000, True))
+    db_client.put_item(TableName=table_name, Item=monitor.create_item(1570716000, True))
+
+
 if __name__ == '__main__':
-    TABLE_NAME = 'MonitorHistory-Dev'
+    TABLE_NAME = 'MonitorHistory-DEV'
     CLIENT = boto3.client('dynamodb', region_name='eu-west-1', endpoint_url="http://localhost:8000")
+
+    # Uncomment this line to delete the table if you want to create a new one
+    # CLIENT.delete_table(TableName=TABLE_NAME)
 
     create_table(CLIENT, TABLE_NAME)
     update_ttl(CLIENT, TABLE_NAME)
+    create_records(CLIENT, TABLE_NAME)
 
-    table_status = CLIENT.describe_table(TableName=TABLE_NAME)
+    table_status = CLIENT.describe_table(TableName=TABLE_NAME).get('Table').get('TableStatus')
     print("Table status:", table_status)

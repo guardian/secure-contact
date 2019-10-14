@@ -6,7 +6,7 @@ import requests
 from boto3 import Session
 from requests.exceptions import RequestException
 
-import securedrop
+from securedrop import build_pages
 from notifications import create_message, send_message, send_email
 
 CHARSET = "UTF-8"
@@ -63,25 +63,29 @@ def healthcheck(response: Optional[requests.Response]) -> bool:
     return False
 
 
-def get_expiry(current_time: float) -> float:
+def get_expiry(current_time: int) -> int:
     # There are 604800 seconds in a week
-    return current_time + float(604800)
+    return current_time + 604800
 
 
-def write_to_database(session: Session, config: Dict[str, str], result: bool) -> None:
-    client = session.client('dynamodb')
+def create_item(current_time: int, outcome: bool) -> Dict[str, Dict[str, str]]:
+    expiration = get_expiry(current_time)
+    return {
+        'CheckTime': {'N': str(current_time)},
+        'ExpirationTime': {'N': str(expiration)},
+        'Outcome': {'S': str(outcome)}
+    }
+
+
+def write_to_database(session: Session, config: Dict[str, str], outcome: bool) -> None:
     # TTL attributes must be in seconds and use the epoch time format
     # Return the time in seconds since the epoch as a floating point number
-    timestamp = time.time()
-    table_name = config['TABLE_NAME']
-    ttl_expiry = get_expiry(timestamp)
+    client = session.client('dynamodb')
+    current_time = int(time.time())
 
     client.put_item(
         TableName=config['TABLE_NAME'],
-        Item={
-            'timestamp': timestamp,
-            'outcome': result
-        }
+        Item=create_item(current_time, outcome)
     )
 
 
@@ -105,7 +109,7 @@ def update_website_configuration(session: Session, bucket_name: str, passes_heal
 
 def perform_failure_actions(session: Session, config: Dict[str, str]):
     message = ("Monitor will attempt to update the page content. \n"
-               "Please check that the update has been appplied.")
+               "Please check that the update has been applied.")
     email_message = create_message('SecureDrop Status Update', message)
     send_email(session, email_message)
     send_message(config, passed=False)
@@ -147,5 +151,5 @@ if __name__ == '__main__':
     }
 
     if CONFIG['BUCKET_NAME'] is not None:
-        securedrop.build_pages(CONFIG['SECUREDROP_URL'], STAGE)
+        build_pages(CONFIG['SECUREDROP_URL'], STAGE)
         run(SESSION, CONFIG)
