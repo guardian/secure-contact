@@ -63,6 +63,28 @@ def healthcheck(response: Optional[requests.Response]) -> bool:
     return False
 
 
+def get_expiry(current_time: float) -> float:
+    # There are 604800 seconds in a week
+    return current_time + float(604800)
+
+
+def write_to_database(session: Session, config: Dict[str, str], result: bool) -> None:
+    client = session.client('dynamodb')
+    # TTL attributes must be in seconds and use the epoch time format
+    # Return the time in seconds since the epoch as a floating point number
+    timestamp = time.time()
+    table_name = config['TABLE_NAME']
+    ttl_expiry = get_expiry(timestamp)
+
+    client.put_item(
+        TableName=config['TABLE_NAME'],
+        Item={
+            'timestamp': timestamp,
+            'outcome': result
+        }
+    )
+
+
 def upload_website_index(session: Session, config: Dict[str, str], passes_healthcheck: bool) -> None:
     file_name = 'build/index.html' if passes_healthcheck else 'build/maintenance.html'
     client = session.client('s3')
@@ -120,7 +142,8 @@ if __name__ == '__main__':
         'PRODMON_WEBHOOK': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-webhook'),
         'PRODMON_SENDER': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-sender'),
         'PRODMON_RECIPIENT': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-recipient'),
-        'SECUREDROP_URL': fetch_parameter(SSM_CLIENT, "securedrop-url")
+        'SECUREDROP_URL': fetch_parameter(SSM_CLIENT, "securedrop-url"),
+        'TABLE_NAME': f'MonitorHistory-{STAGE}'
     }
 
     if CONFIG['BUCKET_NAME'] is not None:
