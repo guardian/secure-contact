@@ -18,6 +18,17 @@ class TestMonitor(unittest.TestCase):
     def test_get_expiry(self):
         self.assertEqual(1571306400, get_expiry(1570701600))
 
+    def test_create_item(self):
+        expected = {
+            'CheckTime': {'N': '1570701600'},
+            'ExpirationTime': {'N': '1571306400'},
+            'Outcome': {'S': 'True'}
+        }
+        self.assertEqual(expected, create_item(1570701600, True))
+
+    def test_read_from_database(self):
+        pass
+
 
 if __name__ == '__main__':
     unittest.main()
