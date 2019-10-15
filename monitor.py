@@ -4,12 +4,11 @@ from typing import Optional, Union, Dict
 
 import requests
 from boto3 import Session
+from boto3.dynamodb.conditions import Attr
 from requests.exceptions import RequestException
 
-from securedrop import build_pages
 from notifications import create_message, send_message, send_email
-
-CHARSET = "UTF-8"
+from securedrop import build_pages
 
 
 def get_stage(filename: str) -> str:
@@ -25,6 +24,14 @@ def get_stage(filename: str) -> str:
 
 def create_session(profile=None, region='eu-west-1') -> Session:
     return Session(profile_name=profile, region_name=region)
+
+
+def create_service_resource(session: Session, stage: str):
+    if stage != 'DEV':
+        return session.resource('dynamodb')
+    # Setting the endpoint creates a table in your local version of DynamoDB.
+    # Before running Secure Contact you should set up the DynamoDB tables.
+    return session.resource('dynamodb', endpoint_url="http://localhost:8000")
 
 
 def fetch_parameter(client, name: str) -> Union[str, None]:
@@ -68,25 +75,34 @@ def get_expiry(current_time: int) -> int:
     return current_time + 604800
 
 
-def create_item(current_time: int, outcome: bool) -> Dict[str, Dict[str, str]]:
+def create_item(current_time: int, outcome: bool) -> Dict[str, str]:
     expiration = get_expiry(current_time)
     return {
-        'CheckTime': {'N': str(current_time)},
-        'ExpirationTime': {'N': str(expiration)},
-        'Outcome': {'S': str(outcome)}
+        'CheckTime': current_time,
+        'ExpirationTime': expiration,
+        'Outcome': str(outcome)
     }
 
 
-def write_to_database(session: Session, config: Dict[str, str], outcome: bool) -> None:
+def write_to_database(dynamodb, table_name: str, outcome: bool):
     # TTL attributes must be in seconds and use the epoch time format
     # Return the time in seconds since the epoch as a floating point number
-    client = session.client('dynamodb')
     current_time = int(time.time())
+    monitor_table = dynamodb.Table(table_name)
+    monitor_table.put_item(Item=create_item(current_time, outcome))
 
-    client.put_item(
-        TableName=config['TABLE_NAME'],
-        Item=create_item(current_time, outcome)
+
+def read_from_database(dynamodb, table_name: str) -> Dict[str, str]:
+    table = dynamodb.Table(table_name)
+    current_time = int(time.time())
+    cutoff_time = current_time - 6000
+    filter_expression = Attr('CheckTime').between(cutoff_time, current_time)
+
+    response = table.scan(
+        FilterExpression=filter_expression,
+        Limit=10
     )
+    return response
 
 
 def upload_website_index(session: Session, config: Dict[str, str], passes_healthcheck: bool) -> None:
@@ -107,13 +123,38 @@ def update_website_configuration(session: Session, bucket_name: str, passes_heal
     s3_client.put_bucket_website(Bucket=bucket_name, WebsiteConfiguration=configuration)
 
 
-def perform_failure_actions(session: Session, config: Dict[str, str]):
+def send_failure_email(session: Session, config: Dict[str, str]):
+    subject = '[ALERT P1] SecureDrop Site Failing Healthcheck'
+    heading = 'SecureDrop Status Update'
     message = ("Monitor will attempt to update the page content. \n"
                "Please check that the update has been applied.")
-    email_message = create_message('SecureDrop Status Update', message)
-    send_email(session, email_message)
-    send_message(config, passed=False)
-    upload_website_index(session, config, passes_healthcheck=False)
+    send_email(session, config, create_message(subject, heading, message))
+
+
+def state_has_changed(healthy: bool, history: Dict[str, str]) -> bool:
+    # TODO: compare result of latest check with previous records
+    pass
+
+
+def monitor(session: Session, config: Dict[str, str]):
+    dynamodb = create_service_resource(session, config['STAGE'])
+    response = send_request(config['SECUREDROP_URL'])
+
+    history = read_from_database(dynamodb, config['TABLE_NAME'])
+    healthy = healthcheck(response)
+
+    print(f'Healthcheck outcome: {healthy}')
+
+    # TODO: perform update once per day regardless and give MOTD
+    if state_has_changed(healthy, history):
+        upload_website_index(session, config, healthy)
+        send_message(config, healthy)
+        # we also send an email alert
+        if not healthy:
+            send_failure_email(session, config)
+
+    # Finally, update the database with the latest result
+    write_to_database(dynamodb, config['TABLE_NAME'], healthy)
 
 
 def run(session: Session, config: Dict[str, str]):
@@ -121,15 +162,17 @@ def run(session: Session, config: Dict[str, str]):
     while attempts < 5:
         attempts += 1
         response = send_request(config['SECUREDROP_URL'])
-        if healthcheck(response):
+        passes_healthcheck = healthcheck(response)
+        if passes_healthcheck:
             print(f'Healthcheck: passed on attempt {attempts}')
-            upload_website_index(session, config, passes_healthcheck=True)
-            send_message(config, passed=True)
+            upload_website_index(session, config, passes_healthcheck)
+            send_message(config, passes_healthcheck)
             break
         print(f'Healthcheck: unable to reach site on attempt {attempts}')
         time.sleep(60)
     else:
-        perform_failure_actions(session, config)
+        send_message(config, passed=False)
+        send_failure_email(session, config)
         print('Healthcheck: failed healthcheck')
 
 
