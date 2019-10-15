@@ -1,5 +1,8 @@
+import decimal
+import numbers
 import os
 import time
+from collections.abc import Iterable, Mapping, ByteString, Set
 from typing import Optional, Union, Dict
 
 import requests
@@ -70,7 +73,46 @@ def healthcheck(response: Optional[requests.Response]) -> bool:
     return False
 
 
-def get_expiry(current_time: int) -> int:
+# For types that involve numbers, it is recommended that Decimal
+# objects are used to be able to round-trip the Python type...
+# We are using a lightweight serializer from author of Bloop:
+# https://github.com/boto/boto3/issues/369#issuecomment-330136042
+def dump_to_dynamodb(item):
+    context = decimal.Context(
+        Emin=-128, Emax=126, rounding=None, prec=38,
+        traps=[decimal.Clamped, decimal.Overflow, decimal.Underflow]
+    )
+
+    # don't catch str/bytes with Iterable check below;
+    # don't catch bool with numbers.Number
+    if isinstance(item, (str, ByteString, bool)):
+        return item
+
+    # ignore inexact, rounding errors
+    if isinstance(item, numbers.Number):
+        return context.create_decimal(item)
+
+    # mappings are also Iterable
+    elif isinstance(item, Mapping):
+        return {
+            key: dump_to_dynamodb(value)
+            for key, value in item.values()
+        }
+
+    # dynamodb.TypeSerializer checks isinstance(o, Set)
+    # so we cannot handle this as a list
+    elif isinstance(item, Set):
+        return set(map(dump_to_dynamodb, item))
+
+    # may not be a literal instance of list
+    elif isinstance(item, Iterable):
+        return list(map(dump_to_dynamodb, item))
+
+    # datetime, custom object, None
+    return item
+
+
+def get_expiry(current_time: int) -> float:
     # There are 604800 seconds in a week
     return current_time + 604800
 
@@ -78,8 +120,8 @@ def get_expiry(current_time: int) -> int:
 def create_item(current_time: int, outcome: bool) -> Dict[str, str]:
     expiration = get_expiry(current_time)
     return {
-        'CheckTime': current_time,
-        'ExpirationTime': expiration,
+        'CheckTime': dump_to_dynamodb(current_time),
+        'ExpirationTime': dump_to_dynamodb(expiration),
         'Outcome': str(outcome)
     }
 
