@@ -84,10 +84,10 @@ java -Djava.library.path=~/etc/DynamoDBLocal_lib -jar ~/etc/DynamoDBLocal.jar -s
 
 ```
 
-You'll also need to set up the required tables. The easiest way to do this is to run the script that exists for this purpose.
+You'll also need to set up the required tables. The easiest way to do this is to run the test suite that exists for this purpose:
 
 ```bash
-python3 dev/dev_database.py
+python3 tests/test_database.py
 ```
 
 Since this runs an in-memory version of DynamoDB, you'll need to set the tables up again each time you restart DynamoDB.
