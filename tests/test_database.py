@@ -8,9 +8,9 @@ from monitor import *
 
 # Use the provided CloudFormation template to create the table in AWS environments.
 # If you update this then be sure to also update the CloudFormation definition.
-def create_table(dynamodb, table_name: str):
-    if table_name not in dynamodb.list_tables().get('TableNames'):
-        dynamodb.create_table(
+def create_table(client, table_name: str):
+    if table_name not in client.list_tables().get('TableNames'):
+        client.create_table(
             TableName=table_name,
             KeySchema=[
                 {
@@ -39,21 +39,25 @@ def create_table(dynamodb, table_name: str):
         )
 
 
-def update_ttl(dynamodb, table_name: str):
-    ttl_status = dynamodb.describe_time_to_live(TableName=table_name)\
+def update_ttl(client, table_name: str):
+    ttl_status = client.describe_time_to_live(TableName=table_name)\
         .get('TimeToLiveDescription')\
         .get('TimeToLiveStatus')
 
     # AWS returns an error if you try to enable ttl if it is already enabled.
     # We therefore need to check the status before trying to enable it... >.<
     if ttl_status != 'ENABLED':
-        dynamodb.update_time_to_live(
+        client.update_time_to_live(
             TableName=table_name,
             TimeToLiveSpecification={
                 'AttributeName': 'ExpirationTime',
                 'Enabled': True
             }
         )
+
+
+def delete_table(client, table_name: str):
+    client.delete_table(TableName=table_name)
 
 
 def get_table_status(dynamodb, table_name: str):
@@ -64,11 +68,14 @@ def get_table_status(dynamodb, table_name: str):
 # If an item that has the same primary key as the new item already exists in the
 # specified table then the new item completely replaces the existing item.
 def create_records(dynamodb, table_name: str):
-    dynamodb.put_item(TableName=table_name, Item=create_item(1570701600, True))
-    dynamodb.put_item(TableName=table_name, Item=create_item(1570705800, True))
-    dynamodb.put_item(TableName=table_name, Item=create_item(1570666200, True))
-    dynamodb.put_item(TableName=table_name, Item=create_item(1570713000, True))
-    dynamodb.put_item(TableName=table_name, Item=create_item(1570716000, True))
+    current_time = int(time.time())
+    monitor_table = dynamodb.Table(table_name)
+    monitor_table.put_item(Item=create_item(current_time - 9100, True))
+    monitor_table.put_item(Item=create_item(current_time - 6100, True))
+    monitor_table.put_item(Item=create_item(current_time - 3100, True))
+    monitor_table.put_item(Item=create_item(current_time - 900, True))
+    monitor_table.put_item(Item=create_item(current_time - 600, True))
+    monitor_table.put_item(Item=create_item(current_time - 300, True))
 
 
 # !! ~~ Only use this module for local testing ~~ !!
@@ -78,30 +85,31 @@ class TestDatabase(unittest.TestCase):
     def setUp(self) -> None:
         self.table_name = 'MonitorHistory-DEV'
         self.dynamodb = boto3.resource('dynamodb', region_name='eu-west-1', endpoint_url="http://localhost:8000")
+        self.client = boto3.client('dynamodb', region_name='eu-west-1', endpoint_url="http://localhost:8000")
 
         # !! ~~ DELETING THE TABLE ~~ !!
-        # Comment the line below to keep the table after tests are done
-        self.dynamodb.delete_table(TableName=self.table_name)
+        # Uncomment the line below to retain the table
+        delete_table(self.client, self.table_name)
 
-        # create DEV table replicating CFN template, and add some sample records
-        create_table(self.dynamodb, self.table_name)
-        update_ttl(self.dynamodb, self.table_name)
+        # !! ~~ CREATING THE TABLE ~~ !!
+        # DEV table based on CFN template with sample records
+        create_table(self.client, self.table_name)
+        update_ttl(self.client, self.table_name)
         create_records(self.dynamodb, self.table_name)
 
     def tearDown(self) -> None:
         pass
 
-    def test_read_from_database(self):
-        result = read_from_database(self.dynamodb, self.dynamodb)
+    def test_read_and_write(self):
+        first_result = read_from_database(self.dynamodb, self.table_name)
+        self.assertEqual(6, first_result.get('ScannedCount'))
+        self.assertEqual(4, len(first_result.get('Items')))
 
-        self.assertEqual(result, create_item(1570701600, True))
-        self.assertEqual(result, create_item(1570701600, True))
+        write_to_database(self.dynamodb, self.table_name, True)
 
-    def test_write_to_database(self):
-        result = write_to_database(self.dynamodb, self.dynamodb, True)
-
-        self.assertEqual(result, create_item(1570701600, True))
-        self.assertEqual(result, create_item(1570701600, True))
+        second_result = read_from_database(self.dynamodb, self.table_name)
+        self.assertEqual(7, second_result.get('ScannedCount'))
+        self.assertEqual(5, len(second_result.get('Items')))
 
 
 if __name__ == '__main__':
