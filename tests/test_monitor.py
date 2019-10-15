@@ -20,14 +20,11 @@ class TestMonitor(unittest.TestCase):
 
     def test_create_item(self):
         expected = {
-            'CheckTime': {'N': '1570701600'},
-            'ExpirationTime': {'N': '1571306400'},
-            'Outcome': {'S': 'True'}
+            'CheckTime': 1570701600,
+            'ExpirationTime': 1571306400,
+            'Outcome': 'True'
         }
         self.assertEqual(expected, create_item(1570701600, True))
-
-    def test_read_from_database(self):
-        pass
 
 
 if __name__ == '__main__':

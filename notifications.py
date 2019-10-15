@@ -28,7 +28,7 @@ def generate_html(heading: str, text: str) -> str:
     </html>"""
 
 
-def create_message(heading: str, text: str):
+def create_message(subject: str, heading: str, text: str):
     body_html = generate_html(heading, text)
     body_text = generate_text(heading, text)
     return {
@@ -44,7 +44,7 @@ def create_message(heading: str, text: str):
         },
         'Subject': {
             'Charset': CHARSET,
-            'Data': '[ALERT P1] SecureDrop Site Failing Healthcheck',
+            'Data': subject,
         },
     }
 
