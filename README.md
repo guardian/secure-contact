@@ -30,7 +30,7 @@ This project is using Python 3.
 
 #### 1. Install Python
 
-Mac users can use homebrew to install Python 3:
+MacOS users can use homebrew to install Python 3:
 
 ```bash
 brew install python3
@@ -77,7 +77,7 @@ pip3 install -r requirements.txt
 
 Secure Contact Monitor uses DynamoDB to persist some information. Therefore to run it locally you will need to make sure you have DynamoDB running. [You can download DynamoDB to run as a local jar from the AWS website](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.DynamoDBLocal.html).
 
-To run DynamoDB for development you can execute the following:
+To run DynamoDB for development, execute the following:
 
 ```bash
 java -Djava.library.path=~/etc/DynamoDBLocal_lib -jar ~/etc/DynamoDBLocal.jar -sharedDb -inMemory
@@ -92,16 +92,26 @@ python3 dev/dev_database.py
 
 Since this runs an in-memory version of DynamoDB, you'll need to set the tables up again each time you restart DynamoDB.
 
-#### Dev server
+#### Tor
 
-Use the following command to start a server:
+For the healthchecks to pass, the machine needs to be running Tor. Even though Tor Browser comes with a regular Tor, it will only run as long as you keep Tor Browser open.
+
+MacOS users can use homebrew to install Tor as a command line tool:
 
 ```bash
-python3 -m http.server
+
+brew install tor
 ```
 
-The default port is 8000.
+The `.sample` extension will then need to be removed from the `torrc` configuration file. The file should be in your   /usr/local/etc/tor/ directory.
 
+More instructions are available on [The Tor Project website](https://2019.www.torproject.org/docs/tor-doc-osx.html.en).
+
+While developing locally, use a separate terminal window to run:
+
+```bash
+tor
+```
 
 ## Validation
 
