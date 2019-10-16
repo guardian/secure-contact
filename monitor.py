@@ -1,17 +1,14 @@
-import decimal
-import numbers
 import os
 import time
-from collections.abc import Iterable, Mapping, ByteString, Set
 from typing import Optional, Union, Dict
 
 import requests
 from boto3 import Session
-from boto3.dynamodb.conditions import Attr
 from requests.exceptions import RequestException
 
 from notifications import create_message, send_message, send_email
 from securedrop import build_pages
+from src.aws_helpers import read_from_database, write_to_database
 
 
 def get_stage(filename: str) -> str:
@@ -73,46 +70,7 @@ def healthcheck(response: Optional[requests.Response]) -> bool:
     return False
 
 
-# For types that involve numbers, it is recommended that Decimal
-# objects are used to be able to round-trip the Python type...
-# We are using a lightweight serializer from author of Bloop:
-# https://github.com/boto/boto3/issues/369#issuecomment-330136042
-def dump_to_dynamodb(item):
-    context = decimal.Context(
-        Emin=-128, Emax=126, rounding=None, prec=38,
-        traps=[decimal.Clamped, decimal.Overflow, decimal.Underflow]
-    )
-
-    # don't catch str/bytes with Iterable check below;
-    # don't catch bool with numbers.Number
-    if isinstance(item, (str, ByteString, bool)):
-        return item
-
-    # ignore inexact, rounding errors
-    if isinstance(item, numbers.Number):
-        return context.create_decimal(item)
-
-    # mappings are also Iterable
-    elif isinstance(item, Mapping):
-        return {
-            key: dump_to_dynamodb(value)
-            for key, value in item.values()
-        }
-
-    # dynamodb.TypeSerializer checks isinstance(o, Set)
-    # so we cannot handle this as a list
-    elif isinstance(item, Set):
-        return set(map(dump_to_dynamodb, item))
-
-    # may not be a literal instance of list
-    elif isinstance(item, Iterable):
-        return list(map(dump_to_dynamodb, item))
-
-    # datetime, custom object, None
-    return item
-
-
-def get_expiry(current_time: int) -> float:
+def get_expiry(current_time: int) -> int:
     # There are 604800 seconds in a week
     return current_time + 604800
 
@@ -120,31 +78,10 @@ def get_expiry(current_time: int) -> float:
 def create_item(current_time: int, outcome: bool) -> Dict[str, str]:
     expiration = get_expiry(current_time)
     return {
-        'CheckTime': dump_to_dynamodb(current_time),
-        'ExpirationTime': dump_to_dynamodb(expiration),
+        'CheckTime': current_time,
+        'ExpirationTime': expiration,
         'Outcome': str(outcome)
     }
-
-
-def write_to_database(dynamodb, table_name: str, outcome: bool):
-    # TTL attributes must be in seconds and use the epoch time format
-    # Return the time in seconds since the epoch as a floating point number
-    current_time = int(time.time())
-    monitor_table = dynamodb.Table(table_name)
-    monitor_table.put_item(Item=create_item(current_time, outcome))
-
-
-def read_from_database(dynamodb, table_name: str) -> Dict[str, str]:
-    table = dynamodb.Table(table_name)
-    current_time = int(time.time())
-    cutoff_time = current_time - 6000
-    filter_expression = Attr('CheckTime').between(cutoff_time, current_time)
-
-    response = table.scan(
-        FilterExpression=filter_expression,
-        Limit=10
-    )
-    return response
 
 
 def upload_website_index(session: Session, config: Dict[str, str], passes_healthcheck: bool) -> None:
@@ -181,7 +118,6 @@ def state_has_changed(healthy: bool, history: Dict[str, str]) -> bool:
 def monitor(session: Session, config: Dict[str, str]):
     dynamodb = create_service_resource(session, config['STAGE'])
     response = send_request(config['SECUREDROP_URL'])
-
     history = read_from_database(dynamodb, config['TABLE_NAME'])
     healthy = healthcheck(response)
 
@@ -196,7 +132,8 @@ def monitor(session: Session, config: Dict[str, str]):
             send_failure_email(session, config)
 
     # Finally, update the database with the latest result
-    write_to_database(dynamodb, config['TABLE_NAME'], healthy)
+    item = create_item(int(time.time()), healthy)
+    write_to_database(dynamodb, config['TABLE_NAME'], item)
 
 
 def run(session: Session, config: Dict[str, str]):
