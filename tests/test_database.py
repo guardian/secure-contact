@@ -2,6 +2,7 @@ import unittest
 import boto3
 
 from monitor import *
+from src.aws_helpers import write_to_database, read_from_database
 
 # !! ~~ Only use this module for local testing ~~ !!
 
@@ -88,7 +89,7 @@ class TestDatabase(unittest.TestCase):
         self.client = boto3.client('dynamodb', region_name='eu-west-1', endpoint_url="http://localhost:8000")
 
         # !! ~~ DELETING THE TABLE ~~ !!
-        # Uncomment the line below to retain the table
+        # Comment out the line below to retain the table
         delete_table(self.client, self.table_name)
 
         # !! ~~ CREATING THE TABLE ~~ !!
@@ -105,7 +106,8 @@ class TestDatabase(unittest.TestCase):
         self.assertEqual(6, first_result.get('ScannedCount'))
         self.assertEqual(4, len(first_result.get('Items')))
 
-        write_to_database(self.dynamodb, self.table_name, True)
+        new_item = create_item(int(time.time()), True)
+        write_to_database(self.dynamodb, self.table_name, new_item)
 
         second_result = read_from_database(self.dynamodb, self.table_name)
         self.assertEqual(7, second_result.get('ScannedCount'))
