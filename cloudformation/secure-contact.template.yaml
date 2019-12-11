@@ -55,17 +55,13 @@ Parameters:
     - PROD
     - CODE
     - DEV
-    Default: PROD
+    Default: CODE
 
   PublicBucket:
     Description: Name of the public S3 bucket that hosts the website
     Type: String
 
 Resources:
-
-# ----------------------- #
-#  COMMON PARAMETERS      #
-# ----------------------- #
 
   SecureDropBucketParameter:
     Type: AWS::SSM::Parameter
@@ -74,6 +70,40 @@ Resources:
       Name: !Sub /secure-contact/${Stage}/securedrop-public-bucket
       Type: String
       Value: !Ref PublicBucket
+
+  # if you update this then you should also update the dev_database script
+  MonitorHistoryTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub MonitorHistory-${Stage}
+      AttributeDefinitions:
+        - AttributeName: CheckTime
+          AttributeType: N
+        - AttributeName: Outcome
+          AttributeType: S
+      KeySchema:
+        - AttributeName: CheckTime
+          KeyType: HASH
+        - AttributeName: Outcome
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TimeToLiveSpecification:
+        AttributeName: ExpirationTime
+        Enabled: true
+      Tags:
+        - Key: Stack
+          Value:
+            Fn::FindInMap: [ Constants, Stack, Value ]
+        - Key: App
+          Value:
+            Fn::FindInMap: [ Constants, App, Value ]
+        - Key: Stage
+          Value: !Ref Stage
+        - Key: Name
+          Value: !Sub ${AWS::StackName}
 
 # ----------------------- #
 #  LOADBALANCER           #
@@ -159,7 +189,7 @@ Resources:
           - sts:AssumeRole
       Path: /
       Policies:
-      - PolicyName: root-policy
+      - PolicyName: instance-policy
         PolicyDocument:
           Statement:
             # fetch parameters according to stage
@@ -184,6 +214,16 @@ Resources:
               Action:
                 - S3:PutBucketWebsite
                 - S3:PutObject
+            # allow instance to read from and append to the database table
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:BatchGetItem
+                - dynamodb:Query
+                - dynamodb:PutItem
+                - dynamodb:DescribeTable
+              Resource:
+                - Fn::GetAtt: [ MonitorHistoryTable, Arn ]
 
   # Minimal policy to run commands via ssm and use ssm-scala
   SSMRunCommandPolicy:
