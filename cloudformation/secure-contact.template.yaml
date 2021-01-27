@@ -254,6 +254,10 @@ Resources:
           - ssm:ListInstanceAssociations
           - ssm:DescribeInstanceProperties
           - ssm:DescribeDocumentParameters
+          - ssmmessages:CreateControlChannel
+          - ssmmessages:CreateDataChannel
+          - ssmmessages:OpenControlChannel
+          - ssmmessages:OpenDataChannel
       Roles:
       - !Ref SecureContactInstanceRole
 
@@ -287,11 +291,6 @@ Resources:
         ToPort: 80
         SourceSecurityGroupId:
           Ref: LoadBalancerSecurityGroup
-      # allow SSH access to specified IP range
-      - IpProtocol: tcp
-        FromPort: 22
-        ToPort: 22
-        CidrIp: !Ref SSHAccessCidr
       SecurityGroupEgress:
       # allow instance to make http requests
       - IpProtocol: tcp
