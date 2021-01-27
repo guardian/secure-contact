@@ -4,113 +4,84 @@
 
 > ~ Terry Pratchett
 
-Scripts for building and running the Guardian's PGP contact and SecureDrop pages
+Automation and tooling for the [PGP contact](https://www.theguardian.com/pgp) and [SecureDrop status](https://www.theguardian.com/securedrop) pages of The Guardian.
 
-## Overview
 
-### Secure Contact Monitor
+## Secure Contact Monitor
 
-Secure Contact Monitor (SCM) performs status monitoring of our onion website and updates our status page accordingly.
+Secure Contact Monitor (SCM) performs status monitoring of our onion site and updates our status page accordingly.
 
 The monitor script attempts to reach our onion site five times, with a 60 second interval between each attempt. The timeouts and sleep are quite generous, which gives the Tor network the benefit of the doubt.
 
 SCM will send notifications via Hangouts Chat and/or email. The channel it messages is determined by the webhook URL that is stored in AWS parameter store.
 
-Most of the configuration, including the Onion URL, is stored in AWS Parameter Store and fetched each time the script is run.
+Most of the configuration, including the Onion URL, is stored in AWS Parameter Store and fetched every time the script runs.
 
-### Notifications and alerts
+### Local Development
 
-TODO: document monitor history and how the application uses DynamoDB
-
-## Contributing
-
-### Python and virtualenv
-
-This project is using Python 3.
-
-#### 1. Install Python
-
-MacOS users can use homebrew to install Python 3:
-
-```bash
-brew install python3
+Clone the repository and move into the directory:
+```
+git clone https://github.com/guardian/secure-contact.git
+cd secure-contact/
 ```
 
-#### 2. Install and activate virtualenv
+#### 1. Install and Configure Tor
 
-It is a good idea to use virtualenv with Python, this can be done with Pip:
+For the healthchecks to work, the machine needs to be running Tor. Even though Tor Browser comes with a regular Tor, it will only run while Tor Browser is open. Therefore, Tor should be installed as a command line tool.
 
-```bash
-pip3 install virtualenv
-```
-
-If you are setting up this project for the first time you will need to create a virtualenv.
-From the root directory of the project run:
+MacOS users can use Homebrew to install Tor:
 
 ```bash
-virtualenv venv
-```
-
-Once that is done, this command will activate virtualenv:
-
-```bash
-source venv/bin/activate
-```
-
-More details on virtual environments can be found here: https://docs.python-guide.org/dev/virtualenvs/
-
-When you are finished with the virtualenv enter `deactivate` in the terminal to return to the default Python interpreter of the system. However, keep the virtualenv running while completing the remaining steps!
-
-#### 3. Install packages
-
-With your virtualenv active, you should be in the directory where requirements.txt is located.
-
-For installing the required packages run:
-
-```bash
-pip3 install -r requirements.txt
-```
-
-### Running locally
-
-#### DynamoDB
-
-Secure Contact Monitor uses DynamoDB to persist some information. Therefore to run it locally you will need to make sure you have DynamoDB running. [You can download DynamoDB to run as a local jar from the AWS website](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.DynamoDBLocal.html).
-
-To run DynamoDB for development, execute the following:
-
-```bash
-java -Djava.library.path=~/etc/DynamoDBLocal_lib -jar ~/etc/DynamoDBLocal.jar -sharedDb -inMemory
-
-```
-
-You'll also need to set up the required tables. The easiest way to do this is to run the test suite that exists for this purpose:
-
-```bash
-python3 tests/test_database.py
-```
-
-Since this runs an in-memory version of DynamoDB, you'll need to set the tables up again each time you restart DynamoDB.
-
-#### Tor
-
-For the healthchecks to pass, the machine needs to be running Tor. Even though Tor Browser comes with a regular Tor, it will only run as long as you keep Tor Browser open.
-
-MacOS users can use homebrew to install Tor as a command line tool:
-
-```bash
-
 brew install tor
 ```
 
-The `.sample` extension will then need to be removed from the `torrc` configuration file. The file should be in your   /usr/local/etc/tor/ directory.
+The `.sample` extension will then need to be removed from the `torrc` configuration file. If you installed Tor using Homebrew The file should be in your `/usr/local/etc/tor/` directory.
 
-More instructions are available on [The Tor Project website](https://2019.www.torproject.org/docs/tor-doc-osx.html.en).
+More instructions are available on [The Tor Project site](https://2019.www.torproject.org/docs/tor-doc-osx.html.en).
 
-While developing locally, use a separate terminal window to run:
+#### 2. Install Python and Pipenv
+
+This project is using Python 3 and [Pipenv](https://pypi.org/project/pipenv/). Pipenv automatically creates and manages a virtualenv for  projects, as well as adds/removes packages from your Pipfile as you install/uninstall packages.
+
+MacOS users can use Homebrew to install both:
+
+```bash
+brew install python3 pipenv
+```
+
+If you install Python via Homebrew you should now also have pip installed. If you are on Linux and installed with an OS package manager, you may have to install pip separately.
+
+#### 3. Install dependencies with Pipenv
+
+It is a good idea to use a virtual environment with Python; this project uses Pipenv.
+From the `secure-contact/` directory, use pipenv to install the required packages and start the virtual environment:
+
+```bash
+pipenv install && pipenv shell
+```
+
+If you run into any issues setting up Python and pipenv, this guide may help: https://docs.python-guide.org/dev/virtualenvs/
+
+Keep the virtual environment running while completing the remaining steps! If you need to terminate the virtual environment, enter `deactivate` in the terminal. This will return you to the default Python interpreter of the system.
+
+#### Running Locally
+
+start Tor running in a terminal:
 
 ```bash
 tor
+```
+
+In another terminal window, navigate to the secure-contact directory and start the virtual environment if it is not already running:
+
+```bash
+pipenv shell
+```
+
+You should now be able to run the modules and tests. To run the healthcheck locally use:
+
+```bash
+python3 -m src.monitor
 ```
 
 ## Validation
@@ -119,6 +90,12 @@ The following command will run the Python tests:
 
 ```bash
 python -m unittest discover -s tests
+```
+
+It is possible to specify a single test case to run, for example:
+
+```bash
+python -m unittest tests.test_database
 ```
 
 
