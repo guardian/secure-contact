@@ -161,9 +161,10 @@ def run(session: Session, config: Dict[str, str]):
         logger.info(f'Healthcheck: unable to reach site on attempt {attempts}')
         time.sleep(60)
     else:
+        logger.info('Healthcheck: failed healthcheck')
+        upload_website_index(session, config, False)
         send_message(config, passed=False)
         send_failure_email(session, config)
-        logger.info('Healthcheck: failed healthcheck')
 
 
 if __name__ == '__main__':

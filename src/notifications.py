@@ -75,8 +75,7 @@ def send_email(session: Session, config: Dict[str, str], message: Dict):
     except ClientError as e:
         logger.error(e.response['Error']['Message'])
     else:
-        logger.info('Email sent! Message ID:')
-        logger.info(response['MessageId'])
+        logger.info(f'Email sent! Message ID: {response["MessageId"]}')
 
 
 def generate_message(card_title: str, card_subtitle: str, message_text: str) -> Dict:
