@@ -72,7 +72,7 @@ def send_request(onion_address: str) -> Optional[requests.Response]:
 
 
 def healthcheck(response: Optional[requests.Response]) -> bool:
-    expected_text = 'SecureDrop | Protecting Journalists and Sources'
+    expected_text = 'The Guardian | SecureDrop'
     if response:
         logger.info(f'response status code: {response.status_code}')
         if response.status_code == 200 and expected_text in response.text:
