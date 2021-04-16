@@ -331,12 +331,11 @@ Resources:
           echo ${Stage} > /etc/stage
 
           # install tor according to the offical guide: https://2019.www.torproject.org/docs/debian.html.en
-          apt install -y apt-transport-https
+          apt update && apt install -y apt-transport-https
           echo "deb https://deb.torproject.org/torproject.org bionic main" | tee -a /etc/apt/sources.list.d/tor.list
           curl https://deb.torproject.org/torproject.org/A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89.asc | gpg --import
           gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | apt-key add -
-          apt update
-          apt install -y tor deb.torproject.org-keyring
+          apt update && apt install -y tor deb.torproject.org-keyring
 
           # Check that tor is running before we proceed
           while true
@@ -353,13 +352,13 @@ Resources:
 
           # install python packages and run monitor once
           cd /secure-contact
-          pipenv install
+          pip3 install -r /secure-contact/requirements.txt
           python3 -m src.monitor
 
           # fix permissions
           chown -R www-data /secure-contact/
 
-          # nginx configuration
+          # add nginx configuration
           cd /etc/nginx/sites-available/
           cat <<SECURE_CONTACT_CONF > secure-contact
           server {
