@@ -105,9 +105,17 @@ python -m unittest tests.test_database
 
 The Secure Contact Monitor service is an EC2 instance running in AWS. The CloudFormation template can be found in this repository and will also create a load balancer and autoscaling group (ASG).
 
-To release the latest version of master to a stage, login to the AWS console and terminate the currently running instance. Once the ASG healthchecks fail, the ASG will launch a new instance using the launch config in the CloudFormation template.
+When an instance launches it will perform the status check and update the status page in S3. Subsequent checks are performed via a cron job that is configured in the launch config UserData.
 
-The status page will remain available during the replacement since the page is served from an S3 bucket. While the new instance is launching it will perform the status check and update the status page in S3.
+To manually run the monitor script, either use [SSM-Scala](https://github.com/guardian/ssm-scala) or start a session in AWS Systems Manager and run the following command:
+
+```bash
+cd /secure-contact && sudo -u www-data python3 -m src.monitor
+```
+
+To release the latest version of the service, consider using [Amiup](https://github.com/guardian/amiup) in yolo mode so that the AMI can be updated at the same time.
+
+Alternatively, login to the AWS console and terminate the currently running instance. Once the ASG healthchecks fail, the ASG will launch a new instance using the launch config in the CloudFormation template. The status page will remain available during the replacement since the page is served from an S3 bucket.
 
 
 ## TODO:
