@@ -1,0 +1,185 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Run minimal Onion site for The Guardian
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Networking
+        Parameters:
+          - VpcId
+          - InstanceSubnet
+      - Label:
+          default: AWS Configuration
+        Parameters:
+          - DataBucketName
+          - AMI
+          - Stage
+
+Mappings:
+  Constants:
+    Stack:
+      Value: editorial-systems-development
+    App:
+      Value: sd-warning
+
+Parameters:
+  VpcId:
+    Description: ID of the VPC onto which to launch the stack
+    Type: AWS::EC2::VPC::Id
+  InstanceSubnet:
+    Description: Subnet in which the instance will run
+    Type: AWS::EC2::Subnet::Id
+
+  DataBucketName:
+    Description: Name of the bucket that holds the static site and hidden_service config
+    Type: String
+
+  AMI:
+    Description: Base AMI for the instance
+    Type: AWS::EC2::Image::Id
+
+  Stage:
+    Description: Application stage
+    Type: String
+    AllowedValues:
+      - PROD
+      - CODE
+      - DEV
+    Default: PROD
+
+Resources:
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTP inbound connections
+      VpcId:
+        Ref: VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 127.0.0.1/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Stack
+          Value:
+            Fn::FindInMap: [Constants, Stack, Value]
+        - Key: App
+          Value:
+            Fn::FindInMap: [Constants, App, Value]
+        - Key: Stage
+          Value: !Ref Stage
+        - Key: Name
+          Value: !Sub ${AWS::StackName}
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref InstanceRole
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+
+  # Minimal policy to run commands via ssm and use ssm-scala
+  SSMRunCommandPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: ssm-run-command
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Resource: "*"
+            Action:
+              - ec2messages:AcknowledgeMessage
+              - ec2messages:DeleteMessage
+              - ec2messages:FailMessage
+              - ec2messages:GetEndpoint
+              - ec2messages:GetMessages
+              - ec2messages:SendReply
+              - ssm:UpdateInstanceInformation
+              - ssm:ListInstanceAssociations
+              - ssm:DescribeInstanceProperties
+              - ssm:DescribeDocumentParameters
+              - ssmmessages:CreateControlChannel
+              - ssmmessages:CreateDataChannel
+              - ssmmessages:OpenControlChannel
+              - ssmmessages:OpenDataChannel
+      Roles:
+        - !Ref InstanceRole
+
+  DataBucketPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: bucket-policy
+      PolicyDocument:
+        Statement:
+          - Action:
+              - s3:ListBucket
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              - !Sub arn:aws:s3:::${DataBucketName}
+              - !Sub arn:aws:s3:::${DataBucketName}/*
+      Roles:
+        - !Ref InstanceRole
+
+  Instance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      ImageId: !Ref AMI
+      InstanceType: t3.micro
+      SourceDestCheck: false
+      IamInstanceProfile: !Ref InstanceProfile
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          GroupSet:
+            - Ref: InstanceSecurityGroup
+          SubnetId:
+            Ref: InstanceSubnet
+      Tags:
+        - Key: Name
+          Value: sd-warning
+      UserData:
+        "Fn::Base64": !Sub |
+          #!/bin/bash -ev
+
+          mkdir -p /www/sd-warning
+          aws s3 cp s3://${DataBucketName}/static/ /www/sd-warning/. --recursive
+
+          mkdir -p /
+          cat << END > /etc/nginx/sites-enabled/sd-warning
+          server {
+            listen 127.0.0.1:8080;
+            root /www/sd-warning;
+          }
+          END
+          nginx
+
+          # Copy the key and hostname over to
+          mkdir -p /var/lib/tor/hidden_service
+
+          aws s3 cp s3://${DataBucketName}/hidden_service/ /var/lib/tor/hidden_service --recursive 
+
+          chmod 700 /var/lib/tor/hidden_service
+          chmod 600 /var/lib/tor/hidden_service/private_key || true # Don't require a private key to be in the s3 bucket
+
+          echo 'HiddenServiceDir /var/lib/tor/hidden_service/' >> /etc/tor/torrc
+          echo 'HiddenServicePort 80 127.0.0.1:8080' >> /etc/tor/torrc
+          systemctl restart tor.service

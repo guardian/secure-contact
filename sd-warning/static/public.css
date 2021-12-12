@@ -1,0 +1,313 @@
+:root {
+    --gu-grey: #506991;
+    --gu-blue: #052962;
+    --gu-yellow-1: #FFF280;
+    --gu-yellow-2: #ffe500;
+    --gu-black: #121212;
+
+    --sc-blue-1: #CCE8f7;
+    --sc-blue-2: #C6E1Ef;
+}
+
+.leira {
+    display: none;
+}
+
+.gu-padding {
+    padding: 12px;
+}
+
+.row {
+    margin: 0;
+}
+
+body {
+    margin: 0;
+    font-family: Guardian Text Egyptian Web,Georgia,serif;
+}
+
+ol {
+    list-style: none;
+    padding: 0;
+}
+
+.header {
+    display: flex;
+    background: #052962;
+    color: white;
+    align-items: center;
+    width: 100%;
+    margin: 0;
+}
+
+.header__gu-logo {
+    margin: 12px 24px;
+}
+
+.header__wrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin: auto;
+    max-width: 68.75rem;
+    width: 100%;
+}
+
+.header__logo {
+    margin-top: .3125rem;
+    margin-bottom: 1rem;
+}
+
+.logo {
+    margin-top: 0.3125rem;
+    margin-bottom: 1.125rem;
+    position: relative;
+}
+
+.section-content {
+    border-left: 1px solid #dcdcdc;
+    border-right: 1px solid #dcdcdc;
+    line-height: 1.8rem;
+}
+
+.collection {
+    border: none;
+}
+
+.gu-heading {
+    font-size: 2rem;
+    font-weight: 900;
+}
+
+.gu-icon {
+    vertical-align: middle;
+    fill: #fff;
+}
+
+/*
+ * Intro - that bit at the top with the yellow and black
+ */
+.intro {
+    margin-top: 2rem;
+    font-weight: 700;
+    font-family: Guardian Headline,Georgia,serif;
+}
+
+.intro__over-heading {
+    font-size: 1.5rem;
+    display: inline-block;
+    line-height: 1;
+    background-color: #ffe500;
+    color: #121212;
+    padding: .5rem .625rem;
+}
+
+.intro__heading {
+    background: #121212;
+    color: white;
+    padding: .1875rem .625rem 2.25rem;
+}
+
+.intro__heading-text {
+    font-size: 2.625rem;
+    line-height: 3rem;
+    max-width: 25rem;
+}
+
+.intro__heading-text--sd {
+    max-width: 40rem;
+}
+
+/*
+ * Filter box
+ */
+.filter {
+    background: #FFF280;
+    color: #fff;
+}
+
+.filter__container {
+    background: #ffe500;
+    border-top: 1px solid #dcdcdc;
+}
+
+.filter__input {
+    border-radius: 30px;
+    padding: 10px 20px;
+    border: 0;
+    font-size: 1rem;
+    max-width: 60%;
+    width: 25rem;
+    color: #767676;
+}
+
+.filter__input:hover,
+.filter__input:focus {
+    outline: none;
+}
+
+.filter__input:focus::placeholder {
+    color: #dcdcdc;
+}
+
+/* SecureDrop status */
+.sd-status {
+    background: #C6E1Ef;
+}
+
+.sd-status__container {
+    background: #CCE8f7;
+}
+
+.sd-status__message {
+    background: #1d3e71;
+    border-radius: 30px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 10px 20px;
+    width: -moz-fit-content;
+    width: -webkit-fit-content;
+    width: fit-content;
+}
+
+/* For listings */
+.js-group[data-hidden] {
+    display: none;
+}
+
+.js-entry[data-hidden] {
+    display: none;
+}
+
+.entry__name {
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+
+.entry__fingerprint {
+    margin-top: 12px;
+    margin-bottom: 12px;
+    font-family: Guardian Text Sans Web,Helvetica Neue,Helvetica,Arial,Lucida Grande,sans-serif;
+}
+
+.entry__link {
+    padding: 6px;
+    margin: 0 6px;
+}
+
+.fingerprint,
+.email {
+    font-family: monospace;
+    margin: 12px;
+    padding: 6px;
+    background-color: #f7f7f7;
+}
+
+.entry__button {
+    background-color: #052962;
+}
+
+.entry__button:hover,
+.entry__button:focus,
+.sd-pgp__button:hover,
+.sd-pgp__button:focus {
+    background-color: #041f4A;
+}
+
+.section-terms {
+    background-color: #f7f7f7;
+    border-top: 1px solid #dcdcdc;
+}
+
+.section-terms__title {
+    font-weight: 700;
+}
+
+.section-terms__text {
+    font-size: .9rem;
+    font-family: Guardian Text Sans Web,Helvetica Neue,Helvetica,Arial,Lucida Grande,sans-serif;
+}
+
+/* footer */
+.page-footer {
+    background-color: #052962;
+    padding: 12px 0;
+}
+
+.gu-copyright {
+    font-size: .8rem;
+    font-weight: 300;
+    font-family: Guardian Text Sans Web,Helvetica Neue,Helvetica,Arial,Lucida Grande,sans-serif;
+}
+
+/* SecureDrop styles */
+
+.circles-list {
+    list-style-type: none;
+    margin: 0 0 0 4rem;
+    padding: 0;
+    counter-reset: li-counter;
+}
+
+.circles-list > li {
+    position: relative;
+    margin-bottom: 24px;
+    padding-left: 5em;
+    min-height: 60px
+}
+
+.circles-list > li:before {
+    position: absolute;
+    top: 0;
+    left: -0.1rem;
+    width: 4rem;
+    height: 4rem;
+    font-size: 3rem;
+    line-height: 1.4;
+    text-align: center;
+    color: #fff;
+    border-radius: 50%;
+    background-color: #052962;
+    font-family:'DE3';
+    content: counter(li-counter);
+    counter-increment: li-counter;
+}
+
+.onion-url {
+    font-weight: 900;
+}
+
+.securedrop {
+    display: flex;
+}
+
+.securedrop__logo {
+    width: 120px;
+    max-width: 120px;
+    margin: 10px;
+}
+
+.sd-pgp {
+    background-color: #C6E1Ef;
+}
+
+.sd-pgp__content {
+    background-color: #CCE8f7;
+    line-height: 1.8rem;
+}
+
+.sd-pgp__button {
+    text-decoration: none;
+    color: #fff;
+    background-color: #1d3e71;
+    letter-spacing: .5px;
+    cursor: pointer;
+    border-radius: 100px;
+    text-transform: none;
+    box-shadow: none;
+    margin: 6px 0;
+}
+
+.sd-maintenance {
+    background-color: #cc2b12;
+}

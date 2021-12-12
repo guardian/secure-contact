@@ -1,5 +1,6 @@
 import json
-from typing import Dict
+import logging.handlers
+from typing import Dict, List
 
 import requests
 from boto3 import Session
@@ -7,6 +8,14 @@ from botocore.exceptions import ClientError
 from requests.exceptions import RequestException
 
 CHARSET = "UTF-8"
+
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M'
+                    )
+
+logger = logging.getLogger('securecontact.notifications')
 
 
 def generate_text(heading: str, text: str) -> str:
@@ -28,7 +37,7 @@ def generate_html(heading: str, text: str) -> str:
     </html>"""
 
 
-def create_message(subject: str, heading: str, text: str):
+def create_email(subject: str, heading: str, text: str):
     body_html = generate_html(heading, text)
     body_text = generate_text(heading, text)
     return {
@@ -63,21 +72,20 @@ def send_email(session: Session, config: Dict[str, str], message: Dict):
             Message=message,
             Source=f'SecureDrop Monitor <{sender}>',
         )
-    # TODO: use logging library instead and send logs somewhere sensible
     except ClientError as e:
-        print(e.response['Error']['Message'])
+        logger.error(e.response['Error']['Message'])
     else:
-        print('Email sent! Message ID:')
-        print(response['MessageId'])
+        logger.info(f'Email sent! Message ID: {response["MessageId"]}')
 
 
-def generate_card(title: str, subtitle: str) -> Dict:
+def generate_message(card_title: str, card_subtitle: str, message_text: str) -> Dict:
     return {
+        "text": message_text,
         "cards": [
             {
                 "header": {
-                    "title": title,
-                    "subtitle": subtitle
+                    "title": card_title,
+                    "subtitle": card_subtitle
                 }
             }
         ]
@@ -87,13 +95,13 @@ def generate_card(title: str, subtitle: str) -> Dict:
 def send_message(config: Dict[str, str], passed: bool):
     # TODO: message @all to notify when healthcheck fails
     headers = {'Content-Type': 'application/json; charset=UTF-8'}
-
     status = 'Status: 💚💚💚' if passed else 'Status: 💔💔💔'
-    card = json.dumps(generate_card('SecureDrop Monitor', status))
+    message_text = '' if passed else '*Attention <users/all> Healthcheck has failed*'
+    message_data = json.dumps(generate_message('SecureDrop Monitor', status, message_text))
 
     try:
-        response = requests.post(url=config['PRODMON_WEBHOOK'], headers=headers, data=card)
-        print(f'Message sent to Hangouts Chat!')
-        print(f'Status code {response.status_code} returned from chat.googleapis.com')
+        response = requests.post(url=config['PRODMON_WEBHOOK'], headers=headers, data=message_data)
+        logger.info(f'Message sent to Hangouts Chat!')
+        logger.info(f'Status code {response.status_code} returned from chat.googleapis.com')
     except RequestException as err:
-        print(err)
+        logger.error(err)
