@@ -171,6 +171,15 @@ a {
     border-top: 1px solid #dcdcdc;
 }
 
+.filter__label-text {
+    position: absolute;
+    opacity: 0;
+    height: 0;
+    width: 0;
+    top: 0;
+    left: 0;
+}
+
 .filter__input {
     border-radius: 30px;
     padding: 10px 20px;
