@@ -8,6 +8,37 @@
     --sc-blue-1: #CCE8f7;
     --sc-blue-2: #C6E1Ef;
 }
+@font-face {
+	font-family: 'GH Guardian Headline';
+	src: url('https://assets.guim.co.uk/static/frontend/fonts/guardian-headline/noalts-not-hinted/GHGuardianHeadline-Bold.woff2')
+			format('woff2'),
+		url('https://assets.guim.co.uk/static/frontend/fonts/guardian-headline/latin1-not-hinted/GHGuardianHeadline-Bold.woff')
+			format('woff'),
+		url('https://assets.guim.co.uk/static/frontend/fonts/guardian-headline/latin1-not-hinted/GHGuardianHeadline-Bold.ttf')
+			format('truetype');
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'GuardianTextSans';
+	src: url('https://assets.guim.co.uk/static/frontend/fonts/guardian-textsans/noalts-not-hinted/GuardianTextSans-Regular.woff2')
+			format('woff2'),
+		url('https://assets.guim.co.uk/static/frontend/fonts/guardian-textsans/noalts-not-hinted/GuardianTextSans-Regular.woff')
+			format('woff'),
+		url('https://assets.guim.co.uk/static/frontend/fonts/guardian-textsans/latin1-not-hinted/GuardianTextSans-Regular.ttf')
+			format('truetype');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face { 
+  font-family: 'GuardianTextEgyptian';
+  src: url('https://assets.guim.co.uk/static/frontend/fonts/guardian-textegyptian/full-autohinted/GuardianTextEgyptian-Regular.woff2') format('woff2'); 
+  font-weight: normal; 
+  font-style: normal; 
+}
+            
 
 .leira {
     display: none;
@@ -19,7 +50,7 @@
 
 body {
     margin: 0;
-    font-family: Guardian Text Egyptian Web,Georgia,serif;
+    font-family: GuardianTextEgyptian, Georgia, serif;
 }
 
 ol {
@@ -95,7 +126,7 @@ ol {
 .intro {
     margin-top: 2rem;
     font-weight: 700;
-    font-family: Guardian Headline,Georgia,serif;
+    font-family: 'GH Guardian Headline', Georgia, serif;
 }
 
 .intro__over-heading {
@@ -193,7 +224,7 @@ ol {
 .entry__fingerprint {
     margin-top: 12px;
     margin-bottom: 12px;
-    font-family: Guardian Text Sans Web,Helvetica Neue,Helvetica,Arial,Lucida Grande,sans-serif;
+    font-family: GuardianTextSans, 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
 }
 
 .entry__link {
@@ -231,7 +262,7 @@ ol {
 
 .section-terms__text {
     font-size: .9rem;
-    font-family: Guardian Text Sans Web,Helvetica Neue,Helvetica,Arial,Lucida Grande,sans-serif;
+    font-family: GuardianTextSans, 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
 }
 
 /* footer */
@@ -243,7 +274,7 @@ ol {
 .gu-copyright {
     font-size: .8rem;
     font-weight: 300;
-    font-family: Guardian Text Sans Web,Helvetica Neue,Helvetica,Arial,Lucida Grande,sans-serif;
+    font-family: GuardianTextSans, 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
 }
 
 /* SecureDrop styles */
