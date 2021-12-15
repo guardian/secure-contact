@@ -58,6 +58,10 @@ ol {
     padding: 0;
 }
 
+a {
+  text-decoration: underline;
+}
+
 .header {
     display: flex;
     background: #052962;
