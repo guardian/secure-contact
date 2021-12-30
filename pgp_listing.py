@@ -5,7 +5,8 @@ import pgp_manager
 import re
 
 from pgp_manager import Entry
-from jinja2 import Environment, FileSystemLoader, select_autoescape, Markup
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+from markupsafe import Markup
 from urllib import parse
 
 from typing import Dict, List, Union

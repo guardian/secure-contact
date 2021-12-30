@@ -51,6 +51,8 @@ brew install python3 pipenv
 
 If you install Python via Homebrew you should now also have pip installed. If you are on Linux and installed with an OS package manager, you may have to install pip separately.
 
+Note: If you need to manage several python3 versions you could use [pyenv](https://github.com/pyenv/pyenv) to do so.
+
 #### 3. Install dependencies with Pipenv
 
 It is a good idea to use a virtual environment with Python; this project uses Pipenv.
