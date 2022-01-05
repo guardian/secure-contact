@@ -176,7 +176,7 @@ Resources:
       CodeUri: 
         Bucket: !Ref ArtifactBucket
         Key: !Sub ${Stack}/${Stage}/${App}/secure-contact-lambda.zip
-      Runtime: python3.7
+      Runtime: python3.8
       Handler: pgp_listing.lambda_handler
       Environment:
         Variables:
