@@ -330,8 +330,10 @@ Resources:
 
           echo ${Stage} > /etc/stage
 
-          # install tor according to the offical guide: https://2019.www.torproject.org/docs/debian.html.en
           apt-get update && apt-get install -y apt-transport-https
+
+          # restart tor service
+          sudo systemctl restart tor
 
           # Check that tor is running before we proceed
           until $(curl -s -o /dev/null --head --fail --socks5-hostname 127.0.0.1:9050 https://check.torproject.org); do
