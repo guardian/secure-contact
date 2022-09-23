@@ -33,14 +33,13 @@
 
   <section class='sd-status row'>
       <div class="sd-status__container container gu-padding">
-        <span class="gu-bold">Current platform status:</span>
           {% if passes_healthcheck %}
             <div class='sd-status__message'>
-                The Guardian SecureDrop service is available.
+                Current platform status: The Guardian SecureDrop service is available.
             </div>
           {% else %}
             <div class='sd-status__message sd-maintenance'>
-                The Guardian SecureDrop service is temporarily unavailable. Please try again later!
+                Current platform status: The Guardian SecureDrop service is temporarily unavailable. Please try again later!
             </div>
           {% endif %}
 
