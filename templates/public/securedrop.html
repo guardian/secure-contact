@@ -17,27 +17,23 @@
   <section class="row">
       <div class="section-content container gu-padding">
           <p class="gu-text">
-              If used as directed, <span class="gu-bold">the Guardian SecureDrop</span> service allows you to share files with the
-              Guardian confident of complete anonymity.
+              SecureDrop is a tool to help people securely send messages and documents to the Guardian. It uses the Tor network to preserve source anonymity by hiding where messages came from. All communication is encrypted in transit and on our server. To avoid surveillance and interception, submissions from sources are decrypted on a device that is isolated from both the internet and our internal networks.
           </p>
           <p class="gu-text">
-              Encrypting the contents of an email using public key cryptographic methods is a good way to avoid
-              compromising the content.
+              To access our SecureDrop site you need to use a browser application that can access the <a href="https://en.wikipedia.org/wiki/Tor_(network)">Tor network</a>.
           </p>
           <p class="gu-text">
-              While the platform itself uses Tor hidden services to support anonymity, it is advisable to be careful
-              where you access it from. You should avoid using the platform on small networks where use of Tor may be
-              monitored or restricted, or in public places where your screen may be viewed by CCTV. We recommend that
-              you don't jump straight from this landing page to the SecureDrop site, especially on business networks
-              that may be monitored. Best practice would be to make a note of the Tor URL (see below) and then to
-              upload your content from a different machine at a later time.
+              Use of the Tor network helps hide your identity online, but it does not guarantee the safety of the computer that you use to contact us. We recommend that you avoid accessing SecureDrop from small networks where use of a Tor browser may be monitored or restricted. If there is any risk of your browser activity being recorded, it's advisable not to jump straight from this information page to the actual Guardian SecureDrop site. You could instead make a note of the SecureDrop ‘onion’ URL (see below) and then wait to connect to that site at another time or on a different computer.
+          </p>
+          <p class="gu-text">
+            If SecureDrop is not the right tool for you, please consider some of the other options in our interactive guide: <a href="https://www.theguardian.com/help/ng-interactive/2017/mar/17/contact-the-guardian-securely">How to contact the Guardian securely</a>.
           </p>
       </div>
   </section>
 
   <section class='sd-status row'>
       <div class="sd-status__container container gu-padding">
-
+        <span class="gu-bold">Current platform status:</span>
           {% if passes_healthcheck %}
             <div class='sd-status__message'>
                 The Guardian SecureDrop service is available.
