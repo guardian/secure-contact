@@ -177,7 +177,19 @@ a {
     background: #CCE8f7;
 }
 
+.sd-status__message_static {
+    /*background: #1d3e71;*/
+    display: inline-block;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 10px 20px;
+    width: -moz-fit-content;
+    width: -webkit-fit-content;
+    width: fit-content;
+}
+
 .sd-status__message {
+    display: inline-block;
     background: #1d3e71;
     border-radius: 30px;
     color: #fff;
