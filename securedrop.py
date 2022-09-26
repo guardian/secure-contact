@@ -12,16 +12,17 @@ env = Environment(
 )
 
 
-def render_page(securedrop_url: str, path: str, passes_healthcheck: bool):
+def render_page(securedrop_url: str, securedrop_url_human: str, path: str, passes_healthcheck: bool):
     root_template = env.get_template('securedrop.html')
     return root_template.render(
         securedrop_url=securedrop_url,
+        securedrop_url_human = securedrop_url_human,
         path=path,
         passes_healthcheck=passes_healthcheck
     )
 
 
-def build_pages(securedrop_url: str, stage: str):
+def build_pages(securedrop_url: str, securedrop_url_human: str, stage: str):
     # routing in Fastly requires the PROD pages to include securedrop/ before links to assets
     path = 'securedrop/' if stage == 'PROD' else ''
 
@@ -29,8 +30,8 @@ def build_pages(securedrop_url: str, stage: str):
         shutil.rmtree('./build')
     os.makedirs('./build')
 
-    passed = render_page(securedrop_url, path=path, passes_healthcheck=True)
-    failed = render_page(securedrop_url, path=path, passes_healthcheck=False)
+    passed = render_page(securedrop_url, securedrop_url_human, path=path, passes_healthcheck=True)
+    failed = render_page(securedrop_url, securedrop_url_human, path=path, passes_healthcheck=False)
 
     index = open("build/index.html", "w")
     maintenance = open("build/maintenance.html", "w")
@@ -42,6 +43,6 @@ def build_pages(securedrop_url: str, stage: str):
 
 
 if __name__ == '__main__':
-    build_pages('33y6fjyhs3phzfjj.onion', stage='DEV')
+    build_pages('xp44cagis447k3lpb4wwhcqukix6cgqokbuys24vmxmbzmaq2gjvc2yd.onion', 'theguardian.securedrop.tor.onion', stage='DEV')
     shutil.copytree('./static', './build/static')
 
