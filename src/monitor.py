@@ -182,9 +182,10 @@ if __name__ == '__main__':
         'PRODMON_SENDER': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-sender'),
         'PRODMON_RECIPIENT': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-recipient'),
         'SECUREDROP_URL': fetch_parameter(SSM_CLIENT, "securedrop-url"),
+        'SECUREDROP_URL_HUMAN': fetch_parameter(SSM_CLIENT, "securedrop-url-human"),
         'TABLE_NAME': f'MonitorHistory-{STAGE}'
     }
 
     if CONFIG['BUCKET_NAME'] is not None:
-        build_pages(CONFIG['SECUREDROP_URL'], STAGE)
+        build_pages(CONFIG['SECUREDROP_URL'], CONFIG['SECUREDROP_URL_HUMAN'], STAGE)
         run(SESSION, CONFIG)

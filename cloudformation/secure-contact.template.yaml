@@ -209,6 +209,7 @@ Resources:
                 - ssm:GetParametersByPath
               Resource:
                 - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/securedrop-url
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/securedrop-url-human                
                 - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/secure-contact/${Stage}/*
             # send email alerts from validated addresses
             - Effect: Allow
