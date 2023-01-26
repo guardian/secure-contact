@@ -35,8 +35,6 @@ cd $OLDPWD
 
 zip -gr target/lambda/${APP}.zip static
 zip -gr target/lambda/${APP}.zip templates
-zip -g target/lambda/${APP}.zip pgp_listing.py
-zip -g target/lambda/${APP}.zip pgp_manager.py
 
 # Create build.json containing RiffRaff metadata
 cat >build.json << EOF

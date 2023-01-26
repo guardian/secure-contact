@@ -1,4 +1,0 @@
-pub   4096R/85FBBD09 2019-03-11
-      Key fingerprint = 6FD2 E4C9 71AD B9BB 1573  85EA 383B C341 85FB BD09
-uid       [ unknown] edge.case@guardian.co.uk
-
