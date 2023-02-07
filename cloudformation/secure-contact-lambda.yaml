@@ -7,10 +7,6 @@ Parameters:
     Description: Name of the S3 bucket where the artifact is located
     Type: String
 
-  DataBucketName:
-    Description: Name to use for the private S3 bucket where we upload data
-    Type: String
-
   PublicBucketName:
     Description: Name to use for the public S3 bucket that will serve content
     Type: String
@@ -39,48 +35,6 @@ Resources:
 # ----------------------- #
 #  S3 BUCKETS FOR APP     #
 # ----------------------- #
-
-  DataBucket:
-    Type: AWS::S3::Bucket
-    DependsOn: BucketPermission
-    DeletionPolicy: Retain
-    Properties:
-      AccessControl: Private
-      BucketName: !Ref DataBucketName
-      NotificationConfiguration:
-        LambdaConfigurations:
-          - Event: 's3:ObjectCreated:*'
-            Function: !GetAtt SecureContactWatcher.Arn
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-      Tags:
-        - Key: App
-          Value: !Ref App
-        - Key: Stack
-          Value: !Ref Stack
-        - Key: Stage
-          Value: !Ref Stage
-
-  DataBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket:
-        Ref: DataBucket
-      PolicyDocument: 
-        Statement: 
-        - Action:
-          - s3:ListBucket
-          - s3:GetObject
-          Effect: Allow
-          Resource:
-            - !Sub arn:aws:s3:::${DataBucket}
-            - !Sub arn:aws:s3:::${DataBucket}/*
-          Principal:
-            AWS: 
-            - !Ref AWS::AccountId
 
   PublicBucket:
     Type: AWS::S3::Bucket
@@ -117,19 +71,6 @@ Resources:
             - !Sub arn:aws:s3:::${PublicBucket}/*
           Principal: "*"
 
-# ----------------------- #
-#  SECURE CONTACT LAMBDA  #
-# ----------------------- #
-
-  BucketPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref SecureContactWatcher
-      Principal: s3.amazonaws.com
-      SourceAccount: !Ref "AWS::AccountId"
-      SourceArn: !Sub arn:aws:s3:::${DataBucketName}
-
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -143,16 +84,6 @@ Resources:
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
       Policies:
-        - PolicyName: data-bucket-read
-          PolicyDocument:
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:GetObject
-                  - s3:ListBucket
-                Resource:
-                  - !Sub arn:aws:s3:::${DataBucketName}
-                  - !Sub arn:aws:s3:::${DataBucketName}/*
         - PolicyName: public-bucket-upload
           PolicyDocument:
             Statement:
@@ -166,31 +97,3 @@ Resources:
                 Action:
                   - s3:PutObject
                   - s3:DeleteObject
-
-  SecureContactWatcher:
-    Type: AWS::Serverless::Function
-    Properties:
-      Description: Generate static files when keys are added
-      FunctionName: !Sub ${App}-${Stage}
-      Role: !GetAtt LambdaExecutionRole.Arn
-      CodeUri: 
-        Bucket: !Ref ArtifactBucket
-        Key: !Sub ${Stack}/${Stage}/${App}/secure-contact-lambda.zip
-      Runtime: python3.8
-      Handler: pgp_listing.lambda_handler
-      Environment:
-        Variables:
-          STAGE: !Ref Stage
-          DATA_BUCKET_NAME: !Ref DataBucketName
-          PUBLIC_BUCKET_NAME: !Ref PublicBucketName
-      Timeout: 300
-      ReservedConcurrentExecutions: 1
-      Events:
-        CheckStatusEvent:
-          Type: Schedule
-          Properties:
-            Schedule: cron(0 11 ? * MON-FRI *)
-      Tags:
-        Stack: !Ref Stack
-        Stage: !Ref Stage
-        App: !Ref App

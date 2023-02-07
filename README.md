@@ -4,7 +4,7 @@
 
 > ~ Terry Pratchett
 
-Automation and tooling for the [PGP contact](https://www.theguardian.com/pgp) and [SecureDrop status](https://www.theguardian.com/securedrop) pages of The Guardian.
+Automation and tooling for the [SecureDrop status](https://www.theguardian.com/securedrop) page of The Guardian.
 
 
 ## Secure Contact Monitor
