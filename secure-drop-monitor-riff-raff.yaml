@@ -13,7 +13,7 @@ deployments:
           AmigoStage: PROD
           Recipe: infosec-secure-contact
       amiEncrypted: true
-      templatePath: secure-drop-monitor-cloudformation/secure-contact.template.yaml
+      templatePath: secure-contact.template.yaml
   secure-contact-monitor-autoscaling:
     app: secure-contact-monitor
     type: autoscaling
