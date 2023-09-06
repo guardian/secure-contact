@@ -25,13 +25,6 @@ Metadata:
       Parameters:
       - AlertEmail
 
-Mappings:
-  Constants:
-    Stack:
-      Value: secure-contact
-    App:
-      Value: monitor
-
 Parameters:
   SSHAccessCidr:
     Description: A CIDR from which access to the instance is allowed
@@ -104,11 +97,9 @@ Resources:
         Enabled: true
       Tags:
         - Key: Stack
-          Value:
-            Fn::FindInMap: [ Constants, Stack, Value ]
+          Value: !Ref Stack
         - Key: App
-          Value:
-            Fn::FindInMap: [ Constants, App, Value ]
+          Value: !Ref App
         - Key: Stage
           Value: !Ref Stage
         - Key: Name
@@ -134,16 +125,14 @@ Resources:
           ToPort: 80
           CidrIp: !Ref SSHAccessCidr
       Tags:
-      - Key: Stack
-        Value:
-          Fn::FindInMap: [ Constants, Stack, Value ]
-      - Key: App
-        Value:
-          Fn::FindInMap: [ Constants, App, Value ]
-      - Key: Stage
-        Value: !Ref Stage
-      - Key: Name
-        Value: !Sub ${AWS::StackName} LoadBalancer
+        - Key: Stack
+          Value: !Ref Stack
+        - Key: App
+          Value: !Ref App
+        - Key: Stage
+          Value: !Ref Stage
+        - Key: Name
+          Value: !Sub ${AWS::StackName} LoadBalancer
 
   LoadBalancer:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
@@ -164,11 +153,9 @@ Resources:
       - Ref: LoadBalancerSecurityGroup
       Tags:
         - Key: Stack
-          Value:
-            Fn::FindInMap: [ Constants, Stack, Value ]
+          Value: !Ref Stack
         - Key: App
-          Value:
-            Fn::FindInMap: [ Constants, App, Value ]
+          Value: !Ref App
         - Key: Stage
           Value: !Ref Stage
         - Key: Name
@@ -303,16 +290,14 @@ Resources:
         ToPort: 443
         CidrIp: 0.0.0.0/0
       Tags:
-      - Key: Stack
-        Value:
-          Fn::FindInMap: [ Constants, Stack, Value ]
-      - Key: App
-        Value:
-          Fn::FindInMap: [ Constants, App, Value ]
-      - Key: Stage
-        Value: !Ref Stage
-      - Key: Name
-        Value: !Sub ${AWS::StackName} Instance
+        - Key: Stack
+          Value: !Ref Stack
+        - Key: App
+          Value: !Ref App
+        - Key: Stage
+          Value: !Ref Stage
+        - Key: Name
+          Value: !Sub ${AWS::StackName} Instance
 
   LaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
@@ -397,20 +382,15 @@ Resources:
       LoadBalancerNames:
       - Ref: LoadBalancer
       Tags:
-      - Key: App
-        Value:
-          Fn::FindInMap: [ Constants, App, Value ]
-        PropagateAtLaunch: true
-      - Key: Stack
-        Value:
-          Fn::FindInMap: [ Constants, Stack, Value ]
-        PropagateAtLaunch: true
-      - Key: Stage
-        Value: !Ref Stage
-        PropagateAtLaunch: true
-      - Key: Name
-        Value: !Sub ${AWS::StackName}
-        PropagateAtLaunch: true
+        - Key: Stack
+          Value: !Ref Stack
+        - Key: App
+          Value: !Ref App
+        - Key: Stage
+          Value: !Ref Stage
+        - Key: Name
+          Value: !Sub ${AWS::StackName}
+          PropagateAtLaunch: true
 
   NotificationTopic:
     Type: AWS::SNS::Topic
