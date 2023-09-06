@@ -1,0 +1,40 @@
+# Find full documentation here https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions
+name: CI
+
+on:
+  pull_request:
+
+  # Manual invocation.
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+jobs:
+  CI:
+    name: Build project files and upload
+    runs-on: ubuntu-latest
+
+    permissions:
+      # required by aws-actions/configure-aws-credentials
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials (deployTools)
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.GU_RIFF_RAFF_ROLE_ARN }}
+          aws-region: eu-west-1
+
+      - name: Upload secure-drop-monitor to riff-raff
+        uses: guardian/actions-riff-raff@v2
+        with:
+          app: monitor
+          configPath: secure-drop-monitor-riff-raff.yaml
+          projectName: InfoSec::secure-drop
+          contentDirectories: |
+            secure-drop-monitor-cloudformation:
+              - cloudformation/secure-contact.template.yaml
