@@ -62,6 +62,13 @@ Parameters:
     Description: Email notified if the healtcheck failed
     Type: String
 
+  App:
+    Type: String
+    Default: secure-contact-monitor
+
+  Stack:
+    Type: String
+
 
 Resources:
 
@@ -384,10 +391,13 @@ Resources:
       Tags:
         - Key: Stack
           Value: !Ref Stack
+          PropagateAtLaunch: true
         - Key: App
           Value: !Ref App
+          PropagateAtLaunch: true
         - Key: Stage
           Value: !Ref Stage
+          PropagateAtLaunch: true
         - Key: Name
           Value: !Sub ${AWS::StackName}
           PropagateAtLaunch: true
