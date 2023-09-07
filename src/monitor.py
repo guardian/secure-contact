@@ -79,11 +79,23 @@ def healthcheck(response: Optional[requests.Response]) -> bool:
             return True
     return False
 
+def get_uptime():
+    with open('/proc/uptime', 'r') as f:
+        uptime_seconds = float(f.readline().split()[0])
+
+    return uptime_seconds
+
 
 def get_expiry(current_time: int) -> int:
     # There are 604800 seconds in a week
     return current_time + 604800
 
+
+def hour_is_0900():
+    if int(time.strftime("%H"))==9:
+        return True
+    else:
+        return False
 
 def create_item(current_time: int, outcome: bool) -> Dict[str, str]:
     expiration = get_expiry(current_time)
