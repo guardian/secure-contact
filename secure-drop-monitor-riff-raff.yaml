@@ -17,6 +17,9 @@ deployments:
   secure-contact-monitor-autoscaling:
     app: secure-contact-monitor
     type: autoscaling
+    healthcheckGrace: 300
+    secondsToWait: 1200
+    warmupGrace: 1200
     dependencies:
       - secure-contact-monitor-cloudformation
     actions:
