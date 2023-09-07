@@ -19,8 +19,7 @@ deployments:
     type: autoscaling
     parameters:
       healthcheckGrace: 300
-      secondsToWait: 1200
-      warmupGrace: 1200
+      warmupGrace: 300
     dependencies:
       - secure-contact-monitor-cloudformation
     actions:
