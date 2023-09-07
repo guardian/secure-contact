@@ -316,7 +316,7 @@ Resources:
       InstanceType: t4g.nano
       IamInstanceProfile:
         Ref: SecureContactInstanceProfile
-      AssociatePublicIpAddress: false
+      AssociatePublicIpAddress: true
       UserData:
         'Fn::Base64': !Sub |
           #!/bin/bash -ev
