@@ -77,8 +77,7 @@ def send_email(session: Session, config: Dict[str, str], message: Dict):
     else:
         logger.info(f'Email sent! Message ID: {response["MessageId"]}')
 
-
-def generate_message(card_title: str, card_subtitle: str, message_text: str) -> Dict:
+def generate_message(card_title: str, card_subtitle: str, message_text: str, redeploy_url: str) -> Dict:
     return {
         "text": message_text,
         "cards": [
@@ -86,7 +85,27 @@ def generate_message(card_title: str, card_subtitle: str, message_text: str) -> 
                 "header": {
                     "title": card_title,
                     "subtitle": card_subtitle
-                }
+                },
+                "sections": [
+                    {
+                        "widgets": [
+                            {
+                                "buttons": [
+                                    {
+                                        "textButton": {
+                                            "text": "Redeploy via Riff-Raff",
+                                            "onClick": {
+                                                "openLink": {
+                                                    "url": redeploy_url
+                                                }
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
             }
         ]
     }
@@ -97,7 +116,7 @@ def send_message(config: Dict[str, str], passed: bool):
     headers = {'Content-Type': 'application/json; charset=UTF-8'}
     status = 'Status: 💚💚💚' if passed else 'Status: 💔💔💔'
     message_text = '' if passed else '*Attention <users/all> Healthcheck has failed*'
-    message_data = json.dumps(generate_message('SecureDrop Monitor', status, message_text))
+    message_data = json.dumps(generate_message('SecureDrop Monitor', status, message_text, config['PRODMON_REDEPLOY_URL']))
 
     try:
         response = requests.post(url=config['PRODMON_WEBHOOK'], headers=headers, data=message_data)
