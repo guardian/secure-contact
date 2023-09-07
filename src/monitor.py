@@ -181,6 +181,7 @@ if __name__ == '__main__':
         'PRODMON_WEBHOOK': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-webhook'),
         'PRODMON_SENDER': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-sender'),
         'PRODMON_RECIPIENT': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-recipient'),
+        'PRODMON_REDEPLOY_URL': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-redeploy-url'),
         'SECUREDROP_URL': fetch_parameter(SSM_CLIENT, "securedrop-url"),
         'SECUREDROP_URL_HUMAN': fetch_parameter(SSM_CLIENT, "securedrop-url-human"),
         'TABLE_NAME': f'MonitorHistory-{STAGE}'
