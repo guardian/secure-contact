@@ -79,11 +79,23 @@ def healthcheck(response: Optional[requests.Response]) -> bool:
             return True
     return False
 
+def get_uptime():
+    with open('/proc/uptime', 'r') as f:
+        uptime_seconds = float(f.readline().split()[0])
+
+    return uptime_seconds
+
 
 def get_expiry(current_time: int) -> int:
     # There are 604800 seconds in a week
     return current_time + 604800
 
+
+def hour_is_0900():
+    if int(time.strftime("%H"))==9:
+        return True
+    else:
+        return False
 
 def create_item(current_time: int, outcome: bool) -> Dict[str, str]:
     expiration = get_expiry(current_time)
@@ -156,7 +168,10 @@ def run(session: Session, config: Dict[str, str]):
         if passes_healthcheck:
             logger.info(f'Healthcheck: passed on attempt {attempts}')
             upload_website_index(session, config, passes_healthcheck)
-            send_message(config, passes_healthcheck)
+            if get_uptime() < 3600:
+                send_message(config, passes_healthcheck)
+            elif hour_is_0900():
+                send_message(config, passes_healthcheck)
             break
         logger.info(f'Healthcheck: unable to reach site on attempt {attempts}')
         time.sleep(60)
@@ -181,6 +196,7 @@ if __name__ == '__main__':
         'PRODMON_WEBHOOK': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-webhook'),
         'PRODMON_SENDER': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-sender'),
         'PRODMON_RECIPIENT': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-recipient'),
+        'PRODMON_REDEPLOY_URL': fetch_parameter(SSM_CLIENT, f'/secure-contact/{STAGE}/prodmon-redeploy-url'),
         'SECUREDROP_URL': fetch_parameter(SSM_CLIENT, "securedrop-url"),
         'SECUREDROP_URL_HUMAN': fetch_parameter(SSM_CLIENT, "securedrop-url-human"),
         'TABLE_NAME': f'MonitorHistory-{STAGE}'

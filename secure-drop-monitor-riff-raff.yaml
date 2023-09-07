@@ -1,0 +1,26 @@
+stacks: [infosec]
+regions: [eu-west-1]
+
+deployments:
+
+  secure-contact-monitor-cloudformation:
+    app: secure-contact-monitor
+    type: cloud-formation
+    parameters:
+      amiParametersToTags:
+        AMI:
+          BuiltBy: amigo
+          AmigoStage: PROD
+          Recipe: infosec-secure-contact
+      amiEncrypted: true
+      templatePath: secure-contact.template.yaml
+  secure-contact-monitor-autoscaling:
+    app: secure-contact-monitor
+    type: autoscaling
+    parameters:
+      healthcheckGrace: 300
+      warmupGrace: 300
+    dependencies:
+      - secure-contact-monitor-cloudformation
+    actions:
+      - deploy
