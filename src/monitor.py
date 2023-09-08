@@ -163,7 +163,7 @@ def monitor(session: Session, config: Dict[str, str], stage: str):
 
 def run(session: Session, config: Dict[str, str]):
     attempts = 0
-    while attempts < 5:
+    while attempts < 10:
         attempts += 1
         response = send_request(config['SECUREDROP_URL'])
         passes_healthcheck = healthcheck(response)
