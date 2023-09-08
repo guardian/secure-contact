@@ -79,6 +79,7 @@ def healthcheck(response: Optional[requests.Response]) -> bool:
             return True
     return False
 
+
 def get_uptime():
     with open('/proc/uptime', 'r') as f:
         uptime_seconds = float(f.readline().split()[0])
@@ -96,6 +97,7 @@ def hour_is_0900():
         return True
     else:
         return False
+
 
 def create_item(current_time: int, outcome: bool) -> Dict[str, str]:
     expiration = get_expiry(current_time)
@@ -174,6 +176,10 @@ def run(session: Session, config: Dict[str, str]):
                 send_message(config, passes_healthcheck)
             break
         logger.info(f'Healthcheck: unable to reach site on attempt {attempts}')
+        # Restart tor service on first failure, and wait for 6 minutes before attempt 2
+        if attempts == 1:
+            os.popen('systemctl restart tor')
+            time.sleep(300)
         time.sleep(60)
     else:
         logger.info('Healthcheck: failed healthcheck')
