@@ -177,7 +177,7 @@ def run(session: Session, config: Dict[str, str]):
             break
         logger.info(f'Healthcheck: unable to reach site on attempt {attempts}')
         # Restart tor service on second failure, and wait for 6 minutes before attempt 2
-        if attempts == 2:
+        if attempts == 3:
             os.popen('systemctl restart tor')
             time.sleep(300)
         time.sleep(80)
