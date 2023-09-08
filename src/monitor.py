@@ -170,7 +170,7 @@ def run(session: Session, config: Dict[str, str]):
         if passes_healthcheck:
             logger.info(f'Healthcheck: passed on attempt {attempts}')
             upload_website_index(session, config, passes_healthcheck)
-            if get_uptime() < 3600:
+            if get_uptime() < 1800:
                 send_message(config, passes_healthcheck)
             elif hour_is_0900():
                 send_message(config, passes_healthcheck)
