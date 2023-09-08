@@ -3,8 +3,8 @@ regions: [eu-west-1]
 
 deployments:
 
-  secure-contact-monitor-cloudformation:
-    app: secure-contact-monitor
+  secure-drop-monitor-cloudformation:
+    app: secure-drop-monitor
     type: cloud-formation
     parameters:
       amiParametersToTags:
@@ -14,13 +14,13 @@ deployments:
           Recipe: infosec-secure-contact
       amiEncrypted: true
       templatePath: secure-contact.template.yaml
-  secure-contact-monitor-autoscaling:
-    app: secure-contact-monitor
+  secure-drop-monitor-autoscaling:
+    app: secure-drop-monitor
     type: autoscaling
     parameters:
       healthcheckGrace: 300
       warmupGrace: 300
     dependencies:
-      - secure-contact-monitor-cloudformation
+      - secure-drop-monitor-cloudformation
     actions:
       - deploy
