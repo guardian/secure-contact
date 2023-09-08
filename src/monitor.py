@@ -66,7 +66,7 @@ def send_request(onion_address: str) -> Optional[requests.Response]:
         'https': 'socks5h://127.0.0.1:9050'
     }
     try:
-        return requests.get(target, headers=headers, proxies=proxies, timeout=10)
+        return requests.get(target, headers=headers, proxies=proxies, timeout=15)
     except RequestException as err:
         logger.error(err)
 
@@ -176,11 +176,11 @@ def run(session: Session, config: Dict[str, str]):
                 send_message(config, passes_healthcheck)
             break
         logger.info(f'Healthcheck: unable to reach site on attempt {attempts}')
-        # Restart tor service on first failure, and wait for 6 minutes before attempt 2
-        if attempts == 1:
+        # Restart tor service on second failure, and wait for 6 minutes before attempt 2
+        if attempts == 2:
             os.popen('systemctl restart tor')
             time.sleep(300)
-        time.sleep(60)
+        time.sleep(80)
     else:
         logger.info('Healthcheck: failed healthcheck')
         upload_website_index(session, config, False)
