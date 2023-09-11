@@ -174,6 +174,8 @@ def run(session: Session, config: Dict[str, str]):
                 send_message(config, passes_healthcheck)
             elif hour_is_0900():
                 send_message(config, passes_healthcheck)
+            elif attempts > 3:
+                send_message(config, passes_healthcheck)
             break
         logger.info(f'Healthcheck: unable to reach site on attempt {attempts}')
         # Restart tor service on second failure, and wait for 6 minutes before attempt 2, and total possible time taken
