@@ -371,7 +371,7 @@ Resources:
           # schedule monitoring service to run on every hour
           touch /secure-contact/cron-lastrun.log
           chown www-data /secure-contact/cron-lastrun.log
-          echo '*/30 * * * * cd /secure-contact && python3 -m src.monitor > /secure-contact/cron-lastrun.log 2>&1' | crontab -u www-data -
+          echo '*/30 * * * * cd /secure-contact && python3 -m src.monitor >> /secure-contact/cron-lastrun.log 2>&1' | crontab -u www-data -
 
 
   AutoscalingGroup:
