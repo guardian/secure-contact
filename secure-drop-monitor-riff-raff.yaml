@@ -18,7 +18,7 @@ deployments:
     app: secure-drop-monitor
     type: autoscaling
     parameters:
-      healthcheckGrace: 300
+      healthcheckGrace: 420
       warmupGrace: 300
     dependencies:
       - secure-drop-monitor-cloudformation
