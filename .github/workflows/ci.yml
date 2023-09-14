@@ -36,5 +36,5 @@ jobs:
           configPath: secure-drop-monitor-riff-raff.yaml
           projectName: InfoSec::secure-drop
           contentDirectories: |
-            secure-contact-monitor-cloudformation:
+            secure-drop-monitor-cloudformation:
               - cloudformation/secure-contact.template.yaml

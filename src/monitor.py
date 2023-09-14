@@ -66,7 +66,7 @@ def send_request(onion_address: str) -> Optional[requests.Response]:
         'https': 'socks5h://127.0.0.1:9050'
     }
     try:
-        return requests.get(target, headers=headers, proxies=proxies, timeout=10)
+        return requests.get(target, headers=headers, proxies=proxies, timeout=15)
     except RequestException as err:
         logger.error(err)
 
@@ -78,6 +78,7 @@ def healthcheck(response: Optional[requests.Response]) -> bool:
         if response.status_code == 200 and expected_text in response.text:
             return True
     return False
+
 
 def get_uptime():
     with open('/proc/uptime', 'r') as f:
@@ -96,6 +97,7 @@ def hour_is_0900():
         return True
     else:
         return False
+
 
 def create_item(current_time: int, outcome: bool) -> Dict[str, str]:
     expiration = get_expiry(current_time)
@@ -161,20 +163,28 @@ def monitor(session: Session, config: Dict[str, str], stage: str):
 
 def run(session: Session, config: Dict[str, str]):
     attempts = 0
-    while attempts < 5:
+    while attempts < 10:
         attempts += 1
         response = send_request(config['SECUREDROP_URL'])
         passes_healthcheck = healthcheck(response)
         if passes_healthcheck:
             logger.info(f'Healthcheck: passed on attempt {attempts}')
             upload_website_index(session, config, passes_healthcheck)
-            if get_uptime() < 3600:
+            if get_uptime() < 1600:
                 send_message(config, passes_healthcheck)
             elif hour_is_0900():
                 send_message(config, passes_healthcheck)
+            elif attempts > 3:
+                send_message(config, passes_healthcheck)
             break
         logger.info(f'Healthcheck: unable to reach site on attempt {attempts}')
-        time.sleep(60)
+        # Restart tor service on second failure, and wait for 6 minutes before attempt 2, and total possible time taken
+        # to complete all attempts should be calculated to be less than (3600*number of runs per hour)
+        if attempts == 3:
+            logger.info('Healthcheck: rebuilding tor circuits')
+            os.popen('systemctl restart tor')
+            time.sleep(300)
+        time.sleep(80)
     else:
         logger.info('Healthcheck: failed healthcheck')
         upload_website_index(session, config, False)
