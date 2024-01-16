@@ -111,6 +111,8 @@ Resources:
           Value: !Ref Stage
         - Key: Name
           Value: !Sub ${AWS::StackName}
+        - Key: devx-backup-enabled
+          Value: false
 
 # ----------------------- #
 #  LOADBALANCER           #
