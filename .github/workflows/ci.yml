@@ -19,19 +19,16 @@ jobs:
       # required by aws-actions/configure-aws-credentials
       id-token: write
       contents: read
+      pull-requests: write
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Configure AWS credentials (deployTools)
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: ${{ secrets.GU_RIFF_RAFF_ROLE_ARN }}
-          aws-region: eu-west-1
-
       - name: Upload secure-drop-monitor to riff-raff
-        uses: guardian/actions-riff-raff@v2
+        uses: guardian/actions-riff-raff@v4
         with:
+          roleArn: ${{ secrets.GU_RIFF_RAFF_ROLE_ARN }}
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
           app: monitor
           configPath: secure-drop-monitor-riff-raff.yaml
           projectName: InfoSec::secure-drop
