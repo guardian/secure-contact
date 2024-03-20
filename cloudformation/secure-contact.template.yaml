@@ -319,7 +319,7 @@ Resources:
         Ref: AMI
       SecurityGroups:
       - Ref: InstanceSecurityGroup
-      InstanceType: t4g.nano
+      InstanceType: t4g.micro
       IamInstanceProfile:
         Ref: SecureContactInstanceProfile
       AssociatePublicIpAddress: true
@@ -342,7 +342,7 @@ Resources:
 
           # install application
           mkdir /secure-contact
-          git clone https://github.com/guardian/secure-contact /secure-contact
+          git clone -b lh-2024-01-16-flask-werkzeug-2.2.2-deps https://github.com/guardian/secure-contact  /secure-contact
 
           # install python packages and run monitor once
           cd /secure-contact
