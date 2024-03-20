@@ -319,7 +319,7 @@ Resources:
         Ref: AMI
       SecurityGroups:
       - Ref: InstanceSecurityGroup
-      InstanceType: t4g.nano
+      InstanceType: t4g.micro
       IamInstanceProfile:
         Ref: SecureContactInstanceProfile
       AssociatePublicIpAddress: true
