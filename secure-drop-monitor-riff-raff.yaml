@@ -4,7 +4,7 @@ regions: [eu-west-1]
 deployments:
 
   secure-drop-monitor-cloudformation:
-    app: secure-drop-monitor
+    app: secure-contact-monitor
     type: cloud-formation
     parameters:
       amiParametersToTags:
@@ -15,7 +15,7 @@ deployments:
       amiEncrypted: true
       templatePath: secure-contact.template.yaml
   secure-drop-monitor-autoscaling:
-    app: secure-drop-monitor
+    app: secure-contact-monitor
     type: autoscaling
     parameters:
       healthcheckGrace: 420
