@@ -299,7 +299,7 @@ Resources:
 
           # install application
           mkdir /secure-contact
-          git clone -b lh-2024-04-09-metadata-v2 https://github.com/guardian/secure-contact /secure-contact
+          git clone https://github.com/guardian/secure-contact /secure-contact
 
           # install python packages and run monitor once
           cd /secure-contact
