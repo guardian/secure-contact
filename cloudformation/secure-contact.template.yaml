@@ -323,6 +323,9 @@ Resources:
       IamInstanceProfile:
         Ref: SecureContactInstanceProfile
       AssociatePublicIpAddress: false
+      MetadataOptions:
+        HttpTokens: required
+        InstanceMetadataTags: enabled
       UserData:
         'Fn::Base64': !Sub |
           #!/bin/bash -ev
