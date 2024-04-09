@@ -7,7 +7,7 @@ Metadata:
     - Label:
         default: Security
       Parameters:
-      - SSHAccessCidr
+      - AccessCidr
     - Label:
         default: Networking
       Parameters:
@@ -20,27 +20,25 @@ Metadata:
       - AMI
       - Stage
       - PublicBucket
-    - Label:
-        default: Other
-      Parameters:
-      - AlertEmail
 
 Parameters:
-  SSHAccessCidr:
+  AccessCidr:
     Description: A CIDR from which access to the instance is allowed
-    AllowedPattern: ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}$
-    ConstraintDescription: Parameter should be a CIDR block e.g. "1.2.3.4/32"
-    Type: String
+    Default: /account/services/kp-public-cidr
+    Type: AWS::SSM::Parameter::Value<String>
 
   VpcId:
     Description: ID of the VPC onto which to launch the stack
-    Type: AWS::EC2::VPC::Id
+    Default: /account/vpc/primary/id
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::VPC::Id>
   LoadBalancerSubnets:
     Description: Subnets to use in VPC for public ELB
-    Type: List<AWS::EC2::Subnet::Id>
+    Default: /account/vpc/primary/subnets/public
+    Type: AWS::SSM::Parameter::Value<List<AWS::EC2::Subnet::Id>>
   InstanceSubnets:
     Description: Subnets to use in VPC for instances
-    Type: List<AWS::EC2::Subnet::Id>
+    Default: /account/vpc/primary/subnets/private
+    Type: AWS::SSM::Parameter::Value<List<AWS::EC2::Subnet::Id>>
 
   AMI:
     Description: Base AMI for SecureContact instances
@@ -53,14 +51,16 @@ Parameters:
     - CODE
     - DEV
     Default: CODE
-
+#
   PublicBucket:
     Description: Name of the public S3 bucket that hosts the website
-    Type: String
+    Default: !Sub /secure-drop/${Stage}/securedrop-public-bucket
+    Type: AWS::SSM::Parameter::Value<String>
 
   AlertEmail:
     Description: Email notified if the healtcheck failed
-    Type: String
+    Default: !Sub /secure-drop/${Stage}/prodmod-recipient
+    Type: AWS::SSM::Parameter::Value<List<String>>
 
   App:
     Type: String
