@@ -251,10 +251,6 @@ Resources:
         FromPort: 443
         ToPort: 443
         CidrIp: 0.0.0.0/0
-      - IpProtocol: tcp
-        FromPort: 1514
-        ToPort: 1515
-        CidrIp: '{{resolve:ssm:/account/services/wazuh-manager-ipv4}}/32'
       Tags:
         - Key: Stack
           Value: !Ref Stack
