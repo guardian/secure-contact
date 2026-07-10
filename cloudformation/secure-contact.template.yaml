@@ -282,7 +282,22 @@ Resources:
           && curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/
           echo ${Stage} > /etc/stage
 
-          apt-get update && apt-get install -y apt-transport-https
+          apt-get update && apt-get install -y apt-transport-https gpg
+
+          # Install tor apt source for up to date tor version
+          TOR_APT="/etc/apt/sources.list.d/tor-project.sources"
+          echo "Types: deb" > $TOR_APT
+          echo "URIs: https://deb.torproject.org/torproject.org" >> $TOR_APT
+          echo "Suites: jammy" >> $TOR_APT
+          echo "Components: main" >> $TOR_APT
+          echo "Architectures: arm64" >> $TOR_APT
+          echo "Signed-By: /usr/share/keyrings/deb.torproject.org-keyring.gpg" >> $TOR_APT
+
+          # Add the repo keyring
+          wget -qO- https://deb.torproject.org/torproject.org/A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89.asc | gpg --dearmor | sudo tee /usr/share/keyrings/deb.torproject.org-keyring.gpg >/dev/null
+
+          # Upgrade tor
+          apt-get update && apt-get install -y tor
 
           # restart tor service
           sudo systemctl restart tor
