@@ -66,7 +66,7 @@ def send_request(onion_address: str) -> Optional[requests.Response]:
         'https': 'socks5h://127.0.0.1:9050'
     }
     try:
-        return requests.get(target, headers=headers, proxies=proxies, timeout=15)
+        return requests.get(target, headers=headers, proxies=proxies, timeout=30)
     except RequestException as err:
         logger.error(err)
 
