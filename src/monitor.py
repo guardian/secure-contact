@@ -182,7 +182,7 @@ def run(session: Session, config: Dict[str, str]):
         # to complete all attempts should be calculated to be less than (3600*number of runs per hour)
         if attempts == 3:
             logger.info('Healthcheck: rebuilding tor circuits')
-            os.popen('systemctl restart tor')
+            os.popen('sudo /bin/systemctl restart tor@default.service')
             time.sleep(300)
         time.sleep(80)
     else:

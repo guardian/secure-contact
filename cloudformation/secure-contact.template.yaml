@@ -300,7 +300,7 @@ Resources:
           apt-get update && apt-get install -y tor
 
           # restart tor service
-          sudo systemctl restart tor
+          systemctl restart tor
 
           # Check that tor is running before we proceed
           until $(curl -s -o /dev/null --head --fail --socks5-hostname 127.0.0.1:9050 https://check.torproject.org); do
@@ -341,6 +341,11 @@ Resources:
           ln -s /etc/nginx/sites-available/secure-contact secure-contact
 
           nginx -s reload
+
+          # allow www-data to be able to restart the tor service via sudo
+          SUDO_RESTART_TOR="www-data ALL=NOPASSWD: /bin/systemctl restart tor@default.service"
+          echo "$SUDO_RESTART_TOR" > /etc/sudoers.d/tor
+          chmod 440 /etc/sudoers.d/tor
 
           # schedule monitoring service to run on every hour
           touch /secure-contact/cron-lastrun.log
