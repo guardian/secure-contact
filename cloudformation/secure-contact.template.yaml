@@ -361,7 +361,7 @@ Resources:
       LaunchConfigurationName:
         Ref: LaunchConfig
       MinSize: 0
-      MaxSize: 2
+      MaxSize: 4
       HealthCheckType: ELB
       HealthCheckGracePeriod: 600
       LoadBalancerNames:
