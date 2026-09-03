@@ -24,6 +24,11 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      - name: Debug Riff-Raff role ARN
+        env:
+          GU_RIFF_RAFF_ROLE_ARN: ${{ secrets.GU_RIFF_RAFF_ROLE_ARN }}
+        run: echo "GU_RIFF_RAFF_ROLE_ARN length is ${#GU_RIFF_RAFF_ROLE_ARN}"
+
       - name: Upload secure-drop-monitor to riff-raff
         uses: guardian/actions-riff-raff@v4
         with:
