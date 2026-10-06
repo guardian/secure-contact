@@ -28,7 +28,7 @@ requests = "==2.33.0"
 rsa = "==4.7.2"
 s3transfer = ">=0.19.1"
 six = "==1.16.0"
-urllib3 = ">=2.7.0"
+urllib3 = ">=2.8.0"
 watchtower = "==2.0.1"
 Werkzeug = "==3.1.8"
 
